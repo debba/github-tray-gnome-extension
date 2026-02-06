@@ -1,6 +1,8 @@
-# GitHub Tray
+# GitHub Tray Gnome Extension
 
 A GNOME Shell extension that puts your GitHub repos right in your top bar. Check stars, issues, and recent activity without opening a browser.
+
+![GitHub Tray Gnome Extension Screenshot](screenshots/screenshot-1.png)
 
 ## What it does
 
@@ -30,10 +32,12 @@ make install
 ```
 
 Then reload GNOME Shell:
+
 - **X11**: Alt+F2, type `r`, Enter
 - **Wayland**: log out and back in
 
 Enable it:
+
 ```bash
 gnome-extensions enable github-tray@extension
 ```
@@ -41,6 +45,7 @@ gnome-extensions enable github-tray@extension
 ## Setup
 
 Click the GitHub icon → Settings and add:
+
 - Your GitHub username
 - A personal access token
 
@@ -49,6 +54,7 @@ Click the GitHub icon → Settings and add:
 Go to [github.com/settings/tokens](https://github.com/settings/tokens) and create a new token (classic).
 
 Give it these scopes:
+
 - `repo` (if you want private repos)
 - `public_repo` (if you only care about public repos)
 
@@ -76,6 +82,7 @@ Creates `github-tray@extension.zip` for distribution.
 ## Troubleshooting
 
 **Nothing shows up?**
+
 ```bash
 # Check it's enabled
 gnome-extensions list --enabled
@@ -85,21 +92,25 @@ journalctl -f -o cat /usr/bin/gnome-shell
 ```
 
 **Error loading repos?**
+
 - Double-check your username and token
 - Token might be expired (they expire after a while)
 
 **Can't set local paths?**
+
 - Install zenity: `sudo pacman -S zenity`
 
 ## Development
 
 Edit code, then:
+
 ```bash
 make install
 # Reload shell (Alt+F2 → r on X11, or logout on Wayland)
 ```
 
 Watch logs:
+
 ```bash
 journalctl -f -o cat /usr/bin/gnome-shell
 ```

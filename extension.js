@@ -193,9 +193,9 @@ export default class GitHubTrayExtension extends Extension {
     Main.panel.addToStatusArea("github-tray", this._indicator, 0, panelBox);
 
     // Set menu width and max height with scroll
-    this._indicator.menu.actor.set_style("max-width: 170px;");
+    this._indicator.menu.actor.set_style("max-width: 200px;");
     this._indicator.menu.box.set_style(
-      "max-height: 600px; overflow-y: auto;",
+      "max-height: 500px; overflow-y: auto;",
     );
 
     // Initial load
