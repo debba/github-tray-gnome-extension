@@ -1,134 +1,123 @@
-# GitHub Tray Extension
+# GitHub Tray
 
-GNOME Shell extension that adds a tray icon showing your GitHub repositories with stars, issues, forks, and language info.
+A GNOME Shell extension that puts your GitHub repos right in your top bar. Check stars, issues, and recent activity without opening a browser.
 
-## Features
+## What it does
 
-- GitHub icon in the top panel (system tray)
-- Lists your repositories sorted by last updated
-- For each repository shows:
-  - Name (bold) + programming language with color dot
-  - Stars, open issues, forks count
-  - Relative last-update time (e.g. "3h ago")
-  - Description (truncated)
-- Click any repo to open it in your browser
-- Auto-refresh every 5 minutes + manual refresh button
-- Star change notifications with badge indicator
-- Total stars count in the header
-- Configurable panel position (left/center/right) and max repos
-- English UI with Italian translation included
+- Shows your repos in a dropdown menu with GitHub-style UI
+- Each repo displays stars, forks, issues, language, and last update time
+- Click a repo to open it on GitHub, or open it locally if you've set a path
+- Links to Issues and Fork parent directly from the menu
+- Shows your avatar and total stars in the header
+- Get notifications when repos gain stars, issues, or forks
+- Auto-refresh every 5 minutes
+- Sort by stars, name, last updated, or last pushed
+- Map repos to local folders and open them in your editor with one click
+- Right-click for more options
 
 ## Requirements
 
-- GNOME Shell 45, 46, 47, or 48
-- libsoup3 (usually pre-installed)
+- GNOME Shell 45+
+- libsoup3 (you probably already have it)
+- zenity (for folder picker, install with `sudo pacman -S zenity` or similar)
 
 ## Installation
 
-### Method 1: Using Makefile
-
 ```bash
-git clone https://github.com/debba/github-tray-extension.git
-cd github-tray-extension
+git clone https://github.com/debba/github-tray-gnome-extension.git
+cd github-tray-gnome-extension
 make install
 ```
 
-Then restart GNOME Shell and enable the extension:
+Then reload GNOME Shell:
+- **X11**: Alt+F2, type `r`, Enter
+- **Wayland**: log out and back in
 
+Enable it:
 ```bash
 gnome-extensions enable github-tray@extension
 ```
 
-### Method 2: Manual
+## Setup
 
-1. Compile schemas:
-   ```bash
-   glib-compile-schemas schemas/
-   ```
-2. Copy to the extensions directory:
-   ```bash
-   cp -r . ~/.local/share/gnome-shell/extensions/github-tray@extension
-   ```
-3. Restart GNOME Shell (Alt+F2 then `r` on X11, or log out/in on Wayland)
-4. Enable the extension:
-   ```bash
-   gnome-extensions enable github-tray@extension
-   ```
+Click the GitHub icon → Settings and add:
+- Your GitHub username
+- A personal access token
 
-## Configuration
+### Getting a token
 
-1. Click the GitHub icon in the top bar
-2. Click **Settings**
-3. Enter your:
-   - **GitHub Username**
-   - **Personal Access Token** (press Enter/Apply to save)
+Go to [github.com/settings/tokens](https://github.com/settings/tokens) and create a new token (classic).
 
-### How to create a Personal Access Token
+Give it these scopes:
+- `repo` (if you want private repos)
+- `public_repo` (if you only care about public repos)
 
-1. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
-2. Click "Generate new token (classic)"
-3. Give it a name
-4. Select scope:
-   - `repo` - for private and public repositories
-   - `public_repo` - for public repositories only
-5. Generate and copy the token
+Copy the token and paste it in Settings.
 
-## Building a distributable package
+### Local projects
+
+Want to open repos directly in your editor?
+
+1. Set your editor command in Settings (default: `code`)
+2. Right-click any repo → "Set local path"
+3. Pick the folder where you cloned it
+4. Now clicking that repo opens it in your editor instead of the browser
+
+Or manage all mappings in Settings → Repository Path Mappings.
+
+## Package it
 
 ```bash
 make pack
 ```
 
-This creates `github-tray@extension.zip` ready for distribution or upload to extensions.gnome.org.
-
-## File structure
-
-```
-github-tray-extension/
-├── extension.js          # Main extension logic
-├── metadata.json         # Extension metadata
-├── prefs.js              # Preferences UI (libadwaita)
-├── schemas/
-│   └── ...gschema.xml    # GSettings schema
-├── po/
-│   └── it.po             # Italian translation
-├── Makefile              # Build, install, pack
-└── README.md
-```
+Creates `github-tray@extension.zip` for distribution.
 
 ## Troubleshooting
 
-**Icon doesn't appear:**
-- Check the extension is enabled: `gnome-extensions list --enabled`
-- Check logs: `journalctl -f -o cat /usr/bin/gnome-shell`
+**Nothing shows up?**
+```bash
+# Check it's enabled
+gnome-extensions list --enabled
 
-**"Error loading repositories":**
-- Verify username and token are correct
-- Make sure the token is not expired
-- Check logs for details
+# Watch the logs
+journalctl -f -o cat /usr/bin/gnome-shell
+```
 
-**Missing icon:**
-- If `github-symbolic` is not in your icon theme, a fallback icon is used automatically
+**Error loading repos?**
+- Double-check your username and token
+- Token might be expired (they expire after a while)
+
+**Can't set local paths?**
+- Install zenity: `sudo pacman -S zenity`
 
 ## Development
 
-1. Edit source files
-2. Run `make install`
-3. Restart GNOME Shell
-4. Check logs: `journalctl -f -o cat /usr/bin/gnome-shell`
+Edit code, then:
+```bash
+make install
+# Reload shell (Alt+F2 → r on X11, or logout on Wayland)
+```
+
+Watch logs:
+```bash
+journalctl -f -o cat /usr/bin/gnome-shell
+```
 
 ---
 
-## Italiano
+## In italiano
 
-Estensione per GNOME Shell che aggiunge un'icona nella barra di sistema per visualizzare i tuoi repository GitHub con stelle, issues, fork e linguaggio.
+Estensione per GNOME Shell che mette i tuoi repo GitHub nella barra in alto. Controlli stelle, issue e attività recente senza aprire il browser.
 
-Per installare: `make install` e poi riavvia GNOME Shell.
+**Installazione**: `make install` e riavvia GNOME Shell.
 
-La configurazione si trova cliccando sull'icona > **Impostazioni** (Settings).
+**Configurazione**: clicca l'icona → Impostazioni (Settings) e inserisci username e token.
 
-Serve un Personal Access Token da [GitHub Settings](https://github.com/settings/tokens) con scope `repo` o `public_repo`.
+Il token lo crei su [GitHub Settings](https://github.com/settings/tokens) con scope `repo` o `public_repo`.
+
+**Progetti locali**: puoi mappare i repo a cartelle locali e aprirli nell'editor con un click. Vai nelle impostazioni per configurare tutto.
 
 ## License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) file for details

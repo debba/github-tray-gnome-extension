@@ -21,5 +21,25 @@
       <summary>Max repositories</summary>
       <description>Maximum number of repositories to display in the list</description>
     </key>
+    <key name="sort-by" type="s">
+      <default>'updated'</default>
+      <summary>Sort repositories by</summary>
+      <description>Sort criteria: updated, pushed, created, stars, name</description>
+    </key>
+    <key name="sort-order" type="s">
+      <default>'desc'</default>
+      <summary>Sort order</summary>
+      <description>Sort order: asc (ascending) or desc (descending)</description>
+    </key>
+    <key name="local-editor" type="s">
+      <default>'code'</default>
+      <summary>Local editor command</summary>
+      <description>Command to open local projects (e.g., code, gedit, gnome-text-editor)</description>
+    </key>
+    <key name="local-projects" type="s">
+      <default>'{}'</default>
+      <summary>Local project paths</summary>
+      <description>JSON mapping of repository names to local paths</description>
+    </key>
   </schema>
 </schemalist>
