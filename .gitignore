@@ -1,0 +1,9 @@
+schemas/gschemas.compiled
+*.po~
+*.mo
+locale/
+*.zip
+.idea/
+.vscode/
+*.swp
+*~

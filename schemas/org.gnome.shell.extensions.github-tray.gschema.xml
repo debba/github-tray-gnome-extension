@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.github-tray" path="/org/gnome/shell/extensions/github-tray/">
+    <key name="github-token" type="s">
+      <default>''</default>
+      <summary>GitHub Personal Access Token</summary>
+      <description>Token for GitHub API access</description>
+    </key>
+    <key name="github-username" type="s">
+      <default>''</default>
+      <summary>GitHub Username</summary>
+      <description>Your GitHub username</description>
+    </key>
+    <key name="panel-box" type="s">
+      <default>'right'</default>
+      <summary>Panel position</summary>
+      <description>Icon position in the top bar: left, center, right</description>
+    </key>
+    <key name="max-repos" type="i">
+      <default>10</default>
+      <summary>Max repositories</summary>
+      <description>Maximum number of repositories to display in the list</description>
+    </key>
+  </schema>
+</schemalist>

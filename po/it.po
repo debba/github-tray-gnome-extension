@@ -1,0 +1,99 @@
+# Italian translation for GitHub Tray GNOME Extension
+# Copyright (C) 2025
+# This file is distributed under the same license as the github-tray package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: github-tray 2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-01 00:00+0000\n"
+"PO-Revision-Date: 2025-01-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# extension.js
+msgid "Refresh"
+msgstr "Aggiorna"
+
+msgid "Settings"
+msgstr "Impostazioni"
+
+msgid "Configure token and username in Settings"
+msgstr "Configura token e username nelle impostazioni"
+
+msgid "Loading repositories..."
+msgstr "Caricamento repository..."
+
+msgid "Error loading repositories"
+msgstr "Errore nel caricamento repository"
+
+msgid "GitHub Tray"
+msgstr "GitHub Tray"
+
+msgid "Failed to fetch repositories: %s"
+msgstr "Impossibile caricare i repository: %s"
+
+msgid "New stars: %s"
+msgstr "Nuove stelle: %s"
+
+msgid "No repositories found"
+msgstr "Nessun repository trovato"
+
+msgid "just now"
+msgstr "adesso"
+
+msgid "%d min ago"
+msgstr "%d min fa"
+
+msgid "%d h ago"
+msgstr "%d h fa"
+
+msgid "%d d ago"
+msgstr "%d g fa"
+
+msgid "%d mo ago"
+msgstr "%d mesi fa"
+
+# prefs.js
+msgid "GitHub Authentication"
+msgstr "Autenticazione GitHub"
+
+msgid "Create a token at github.com/settings/tokens\nRequired scopes: repo (private) or public_repo (public only)"
+msgstr "Crea un token su github.com/settings/tokens\nScope richiesti: repo (privati) o public_repo (solo pubblici)"
+
+msgid "GitHub Username"
+msgstr "Username GitHub"
+
+msgid "Personal Access Token"
+msgstr "Token di Accesso Personale"
+
+msgid "Display"
+msgstr "Visualizzazione"
+
+msgid "Configure how repositories are shown"
+msgstr "Configura come visualizzare i repository"
+
+msgid "Panel position"
+msgstr "Posizione nella barra"
+
+msgid "Where the icon appears in the top bar"
+msgstr "Dove appare l'icona nella barra superiore"
+
+msgid "Left"
+msgstr "Sinistra"
+
+msgid "Center"
+msgstr "Centro"
+
+msgid "Right"
+msgstr "Destra"
+
+msgid "Max repositories"
+msgstr "Repository massimi"
+
+msgid "Maximum number of repositories to display"
+msgstr "Numero massimo di repository da visualizzare"
