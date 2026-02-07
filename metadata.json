@@ -1,5 +1,5 @@
 {
-  "uuid": "github-tray@extension",
+  "uuid": "github-tray@debba.github.com",
   "name": "GitHub Tray",
   "description": "Display your GitHub repositories in the system tray with stars, issues, forks, and language info",
   "version": 1,

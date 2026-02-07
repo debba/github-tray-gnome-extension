@@ -6,7 +6,6 @@ import Clutter from "gi://Clutter";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
-import * as BoxPointer from "resource:///org/gnome/shell/ui/boxpointer.js";
 import {
   Extension,
   gettext as _,
@@ -57,6 +56,8 @@ export default class GitHubTrayExtension extends Extension {
     this._httpSession = new Soup.Session();
     this._lastRepos = null;
     this._isLoading = false;
+    this._pendingUpdate = null; // Store pending menu update data
+    this._detectChangesTimeoutId = null; // Track detect changes timeout
 
     this._indicator = new PanelMenu.Button(0.0, "GitHub Tray");
 
@@ -68,32 +69,30 @@ export default class GitHubTrayExtension extends Extension {
       style_class: "system-status-icon",
     });
 
-    // Unread badge (hidden by default) - GitHub style
-    this._badge = new St.Label({
-      style_class: "github-tray-badge",
-      style:
-        "font-size: 7px; font-weight: bold; color: #ffffff; " +
-        "background: #cf222e; " + // GitHub red for notifications
-        "border-radius: 10px; " +
-        "min-width: 14px; min-height: 14px; text-align: center; " +
-        "padding: 2px 4px; margin-left: -8px; margin-top: -6px; " +
-        "border: 2px solid #0d1117;", // GitHub dark background
-      text: "",
-      visible: false,
-    });
-
     const iconBox = new St.BoxLayout({ style: "spacing: 0px;" });
     iconBox.add_child(this._icon);
-    iconBox.add_child(this._badge);
     this._indicator.add_child(iconBox);
 
     // Header with user info (populated after first fetch)
     this._headerSection = new PopupMenu.PopupMenuSection();
     this._indicator.menu.addMenuItem(this._headerSection);
 
-    // Repos container
+    // Repos container wrapped in ScrollView
     this._reposContainer = new PopupMenu.PopupMenuSection();
-    this._indicator.menu.addMenuItem(this._reposContainer);
+
+    // Create ScrollView
+    this._reposScrollView = new St.ScrollView({
+      style_class: "github-tray-scrollview",
+      hscrollbar_policy: St.PolicyType.NEVER,
+      vscrollbar_policy: St.PolicyType.AUTOMATIC,
+      enable_mouse_scrolling: true,
+    });
+    this._reposScrollView.set_child(this._reposContainer.actor);
+
+    // Create wrapper section for menu insertion
+    const scrollSection = new PopupMenu.PopupMenuSection();
+    scrollSection.actor.add_child(this._reposScrollView);
+    this._indicator.menu.addMenuItem(scrollSection);
 
     this._indicator.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
@@ -104,86 +103,92 @@ export default class GitHubTrayExtension extends Extension {
     });
     const bottomLayout = new St.BoxLayout({
       x_expand: true,
-      style: "spacing: 8px; padding: 6px 10px;",
+      style_class: "github-tray-bottom-box",
     });
 
     // GitHub-style refresh button
     const refreshBtn = new St.Button({
       label: _("Refresh"),
-      style_class: "button",
-      style:
-        "min-width: 90px; padding: 6px 16px; " +
-        "background: #238636; " + // GitHub green
-        "border-radius: 6px; font-weight: 600; font-size: 11px; " +
-        "color: #ffffff; " +
-        "border: 1px solid rgba(31, 111, 235, 0.4); " +
-        "transition-duration: 150ms;",
+      style_class: "button github-tray-btn-primary",
       can_focus: true,
     });
     refreshBtn.connect("clicked", () => {
-      this._loadRepositories();
       this._indicator.menu.close();
-    });
-    refreshBtn.connect("enter-event", () => {
-      refreshBtn.set_style(
-        "min-width: 90px; padding: 6px 16px; " +
-          "background: #2ea043; " + // GitHub green hover
-          "border-radius: 6px; font-weight: 600; font-size: 11px; " +
-          "color: #ffffff; " +
-          "border: 1px solid rgba(31, 111, 235, 0.5); " +
-          "transition-duration: 150ms;",
-      );
-    });
-    refreshBtn.connect("leave-event", () => {
-      refreshBtn.set_style(
-        "min-width: 90px; padding: 6px 16px; " +
-          "background: #238636; " +
-          "border-radius: 6px; font-weight: 600; font-size: 11px; " +
-          "color: #ffffff; " +
-          "border: 1px solid rgba(31, 111, 235, 0.4); " +
-          "transition-duration: 150ms;",
-      );
+      // Delay load to let menu close animation finish
+      GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+        if (this._indicator) {
+          this._loadRepositories();
+        }
+        return GLib.SOURCE_REMOVE;
+      });
     });
     bottomLayout.add_child(refreshBtn);
 
     // GitHub-style settings button
     const settingsBtn = new St.Button({
       label: _("Settings"),
-      style_class: "button",
-      style:
-        "min-width: 90px; padding: 6px 16px; " +
-        "background: #21262d; " + // GitHub button background
-        "border-radius: 6px; font-weight: 600; font-size: 11px; " +
-        "color: #c9d1d9; " + // GitHub text color
-        "border: 1px solid rgba(240, 246, 252, 0.1); " +
-        "transition-duration: 150ms;",
+      style_class: "button github-tray-btn-secondary",
       can_focus: true,
     });
     settingsBtn.connect("clicked", () => {
       this.openPreferences();
       this._indicator.menu.close();
     });
-    settingsBtn.connect("enter-event", () => {
-      settingsBtn.set_style(
-        "min-width: 90px; padding: 6px 16px; " +
-          "background: #30363d; " + // GitHub hover
-          "border-radius: 6px; font-weight: 600; font-size: 11px; " +
-          "color: #c9d1d9; " +
-          "border: 1px solid rgba(240, 246, 252, 0.2); " +
-          "transition-duration: 150ms;",
-      );
-    });
-    settingsBtn.connect("leave-event", () => {
-      settingsBtn.set_style(
-        "min-width: 90px; padding: 6px 16px; " +
-          "background: #21262d; " +
-          "border-radius: 6px; font-weight: 600; font-size: 11px; " +
-          "color: #c9d1d9; " +
-          "border: 1px solid rgba(240, 246, 252, 0.1); " +
-          "transition-duration: 150ms;",
-      );
-    });
     bottomLayout.add_child(settingsBtn);
+
+    // Debug button (only visible in debug mode)
+    this._debugBtn = new St.Button({
+      label: _("Debug"),
+      style_class: "button github-tray-btn-secondary",
+      can_focus: true,
+      visible: this._settings.get_boolean("debug-mode"),
+    });
+    this._debugBtn.connect("clicked", () => {
+      // Simulate a full data refresh with random changes to repos
+      if (this._lastRepos && this._lastRepos.length >= 1) {
+        const oldRepos = this._lastRepos;
+        const username = this._settings.get_string("github-username");
+
+        // Create modified repos with random changes (stars, issues, forks)
+        const modifiedRepos = this._lastRepos.map((r, i) => {
+          if (i < 3 && i < this._lastRepos.length) {
+            const clone = { ...r };
+            // Randomly add stars (50% chance)
+            if (Math.random() > 0.5) {
+              clone.stargazers_count += Math.floor(Math.random() * 5) + 1;
+            }
+            // Randomly add issues (30% chance)
+            if (Math.random() > 0.7) {
+              clone.open_issues_count += Math.floor(Math.random() * 3) + 1;
+            }
+            // Randomly add forks (20% chance)
+            if (Math.random() > 0.8) {
+              clone.forks_count += Math.floor(Math.random() * 2) + 1;
+            }
+            return clone;
+          }
+          return r;
+        });
+
+        // Update cached repos
+        this._lastRepos = modifiedRepos;
+
+        // Store pending update - will be applied when menu finishes closing
+        // via the open-state-changed handler. This avoids destroying actors
+        // during the menu close animation which corrupts the panel rendering.
+        this._pendingUpdate = {
+          repos: modifiedRepos,
+          username,
+          userInfo: null,
+        };
+        this._pendingDetectChanges = { newRepos: modifiedRepos, oldRepos };
+
+        this._indicator.menu.close();
+      } else {
+        this._indicator.menu.close();
+      }
+    });
+    bottomLayout.add_child(this._debugBtn);
 
     bottomBox.add_child(bottomLayout);
     this._indicator.menu.addMenuItem(bottomBox);
@@ -193,9 +198,39 @@ export default class GitHubTrayExtension extends Extension {
     Main.panel.addToStatusArea("github-tray", this._indicator, 0, panelBox);
 
     // Set menu width and max height with scroll
-    this._indicator.menu.actor.set_style("max-width: 200px;");
-    this._indicator.menu.box.set_style(
-      "max-height: 500px; overflow-y: auto;",
+    this._indicator.menu.actor.add_style_class_name("github-tray-menu");
+    this._indicator.menu.box.add_style_class_name("github-tray-menu-box");
+
+    // Connect signal handler to hide badge when menu is opened and handle pending updates
+    this._menuOpenChangedId = this._indicator.menu.connect(
+      "open-state-changed",
+      (_menu, open) => {
+        if (!open) {
+          // Menu closed - delay updates to let close animation finish,
+          // otherwise modifying actors during animation corrupts the panel
+          if (this._pendingUpdate || this._pendingDetectChanges) {
+            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+              if (!this._indicator) return GLib.SOURCE_REMOVE;
+
+              // Apply pending menu update
+              if (this._pendingUpdate) {
+                const { repos, username, userInfo } = this._pendingUpdate;
+                this._pendingUpdate = null;
+                this._updateMenu(repos, username, userInfo);
+              }
+
+              // Trigger pending change detection
+              if (this._pendingDetectChanges) {
+                const { newRepos, oldRepos } = this._pendingDetectChanges;
+                this._pendingDetectChanges = null;
+                this._detectChanges(newRepos, oldRepos);
+              }
+
+              return GLib.SOURCE_REMOVE;
+            });
+          }
+        }
+      },
     );
 
     // Initial load
@@ -216,6 +251,12 @@ export default class GitHubTrayExtension extends Extension {
     this._settingsChangedId = this._settings.connect(
       "changed",
       (_settings, key) => {
+        // Update debug button visibility when debug-mode changes
+        if (key === "debug-mode" && this._debugBtn) {
+          this._debugBtn.visible = this._settings.get_boolean("debug-mode");
+          return;
+        }
+
         // Only reload for relevant keys
         if (
           ![
@@ -254,24 +295,48 @@ export default class GitHubTrayExtension extends Extension {
       GLib.source_remove(this._settingsDebounceId);
       this._settingsDebounceId = null;
     }
+    if (this._detectChangesTimeoutId) {
+      GLib.source_remove(this._detectChangesTimeoutId);
+      this._detectChangesTimeoutId = null;
+    }
     if (this._settingsChangedId) {
       this._settings.disconnect(this._settingsChangedId);
       this._settingsChangedId = null;
+    }
+    if (this._menuOpenChangedId) {
+      this._indicator.menu.disconnect(this._menuOpenChangedId);
+      this._menuOpenChangedId = null;
     }
     if (this._indicator) {
       this._indicator.destroy();
       this._indicator = null;
     }
+
     this._httpSession = null;
     this._settings = null;
     this._lastRepos = null;
+    this._pendingUpdate = null;
+    this._pendingDetectChanges = null;
+  }
+
+  _sendNotification(summary, body) {
+    if (!summary || !body) return;
+
+    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+      try {
+        Main.notify(summary, body);
+      } catch (e) {
+        logError(e, "GitHubTray:notify");
+      }
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   async _loadRepositories() {
-    if (this._isLoading) return;
+    if (this._isLoading || !this._indicator) return;
 
-    const token = this._settings.get_string("github-token");
-    const username = this._settings.get_string("github-username");
+    const token = this._settings?.get_string("github-token");
+    const username = this._settings?.get_string("github-username");
 
     if (!token || !username) {
       this._showMessage(_("Configure token and username in Settings"));
@@ -279,7 +344,11 @@ export default class GitHubTrayExtension extends Extension {
     }
 
     this._isLoading = true;
-    this._showMessage(_("Loading repositories..."));
+
+    // Don't show loading message if menu is open to avoid flickering
+    if (!this._indicator.menu.isOpen) {
+      this._showMessage(_("Loading repositories..."));
+    }
 
     try {
       // Fetch user info (including avatar) in parallel with repositories
@@ -288,19 +357,47 @@ export default class GitHubTrayExtension extends Extension {
         this._fetchUserInfo(token, username),
       ]);
 
+      // Guard: extension may have been disabled during async fetch
+      if (!this._indicator) return;
+
       // Sort repositories (needed for 'stars' which API doesn't support)
       this._sortRepositories(repos);
 
-      this._detectChanges(repos);
+      // Store old repos for comparison
+      const oldRepos = this._lastRepos;
       this._lastRepos = repos;
-      this._updateMenu(repos, username, userInfo);
+
+      // Only update menu if it's not currently open to avoid rendering issues
+      if (!this._indicator.menu.isOpen) {
+        this._updateMenu(repos, username, userInfo);
+      } else {
+        // Menu is open - store update for later when menu closes
+        this._pendingUpdate = { repos, username, userInfo };
+      }
+
+      // Delay notifications to avoid interference with menu update
+      if (oldRepos) {
+        this._detectChangesTimeoutId = GLib.timeout_add(
+          GLib.PRIORITY_DEFAULT,
+          100,
+          () => {
+            this._detectChangesTimeoutId = null;
+            if (this._indicator) {
+              this._detectChanges(repos, oldRepos);
+            }
+            return GLib.SOURCE_REMOVE;
+          },
+        );
+      }
     } catch (error) {
       logError(error, "GitHubTray");
-      this._showMessage(_("Error loading repositories"));
-      Main.notifyError(
-        _("GitHub Tray"),
-        _("Failed to fetch repositories: %s").format(error.message),
-      );
+      if (this._indicator) {
+        this._showMessage(_("Error loading repositories"));
+        Main.notifyError(
+          _("GitHub Tray"),
+          _("Failed to fetch repositories: %s").format(error.message),
+        );
+      }
     } finally {
       this._isLoading = false;
     }
@@ -435,11 +532,11 @@ export default class GitHubTrayExtension extends Extension {
   /**
    * Detect if any repo gained stars, issues, or forks since last check and show notifications.
    */
-  _detectChanges(newRepos) {
-    if (!this._lastRepos) return;
+  _detectChanges(newRepos, oldRepos) {
+    if (!oldRepos) return;
 
     const oldMap = new Map(
-      this._lastRepos.map((r) => [
+      oldRepos.map((r) => [
         r.id,
         {
           stars: r.stargazers_count,
@@ -479,28 +576,21 @@ export default class GitHubTrayExtension extends Extension {
       }
     }
 
-    // Show notifications for stars
-    if (totalNewStars > 0) {
-      this._badge.text = totalNewStars.toString();
-      this._badge.visible = true;
-
+    // Show notifications for stars (only if menu is not open)
+    if (totalNewStars > 0 && this._indicator && !this._indicator.menu.isOpen) {
       const starsMsg = starsGained
         .map((item) => `${item.name} +${item.diff} ⭐`)
         .join("\n");
 
-      Main.notify(_("⭐ New Stars!"), starsMsg);
-
-      // Hide badge when menu is opened
-      this._indicator.menu.connect("open-state-changed", (_menu, open) => {
-        if (open) {
-          this._badge.visible = false;
-          this._badge.text = "";
-        }
-      });
+      this._sendNotification(_("New Stars!"), starsMsg);
     }
 
-    // Show notifications for new issues
-    if (newIssues.length > 0) {
+    // Show notifications for new issues (only if menu is not open)
+    if (
+      newIssues.length > 0 &&
+      this._indicator &&
+      !this._indicator.menu.isOpen
+    ) {
       const issuesMsg = newIssues
         .map(
           (item) =>
@@ -508,11 +598,15 @@ export default class GitHubTrayExtension extends Extension {
         )
         .join("\n");
 
-      Main.notify(_("🔴 New Issues Opened"), issuesMsg);
+      this._sendNotification(_("New Issues Opened"), issuesMsg);
     }
 
-    // Show notifications for new forks
-    if (newForks.length > 0) {
+    // Show notifications for new forks (only if menu is not open)
+    if (
+      newForks.length > 0 &&
+      this._indicator &&
+      !this._indicator.menu.isOpen
+    ) {
       const forksMsg = newForks
         .map(
           (item) =>
@@ -520,97 +614,92 @@ export default class GitHubTrayExtension extends Extension {
         )
         .join("\n");
 
-      Main.notify(_("🍴 New Forks Created"), forksMsg);
+      this._sendNotification(_("New Forks Created"), forksMsg);
     }
   }
 
   _updateMenu(repos, username, userInfo = null) {
-    this._headerSection.removeAll();
-    this._reposContainer.removeAll();
+    try {
+      // Guard against destroyed indicator
+      if (!this._indicator) return;
 
-    // Header row with GitHub style
-    const totalStars = repos.reduce((s, r) => s + r.stargazers_count, 0);
-    const headerItem = new PopupMenu.PopupBaseMenuItem({
-      reactive: false,
-      can_focus: false,
-    });
-    const headerBox = new St.BoxLayout({
-      x_expand: true,
-      style:
-        "spacing: 12px; padding: 10px 16px; " +
-        "background: linear-gradient(180deg, #161b22 0%, #0d1117 100%); " + // GitHub dark gradient
-        "border-radius: 6px; margin: 4px 8px; " +
-        "border: 1px solid #30363d;", // GitHub border
-    });
+      // Clear menu sections
+      this._headerSection.removeAll();
+      this._reposContainer.removeAll();
 
-    const usernameBtn = new St.Button({
-      label: `@${username}`,
-      style_class: "button",
-      style:
-        "font-weight: 600; font-size: 13px; color: #58a6ff; " + // GitHub blue
-        "padding: 4px 8px; background: rgba(56, 139, 253, 0.1); " +
-        "border: 1px solid rgba(56, 139, 253, 0.2); " +
-        "border-radius: 6px;",
-      can_focus: true,
-    });
-    usernameBtn.connect("clicked", () => {
-      try {
-        Gio.AppInfo.launch_default_for_uri(
-          `https://github.com/${username}`,
-          null,
-        );
-      } catch (e) {
-        logError(e, "GitHubTray:open-profile");
+      // Header row with GitHub style
+      const totalStars = repos.reduce((s, r) => s + r.stargazers_count, 0);
+      const headerItem = new PopupMenu.PopupBaseMenuItem({
+        reactive: false,
+        can_focus: false,
+      });
+      const headerBox = new St.BoxLayout({
+        x_expand: true,
+        style_class: "github-tray-header",
+      });
+
+      const usernameBtn = new St.Button({
+        label: `@${username}`,
+        style_class: "button github-tray-header-user",
+        can_focus: true,
+      });
+      usernameBtn.connect("clicked", () => {
+        try {
+          Gio.AppInfo.launch_default_for_uri(
+            `https://github.com/${username}`,
+            null,
+          );
+        } catch (e) {
+          logError(e, "GitHubTray:open-profile");
+        }
+        this._indicator.menu.close();
+      });
+      headerBox.add_child(usernameBtn);
+
+      // Spacer
+      const spacer = new St.Widget({ x_expand: true });
+      headerBox.add_child(spacer);
+
+      // Stars badge - GitHub style
+      const starsBox = new St.BoxLayout({
+        vertical: false,
+        style_class: "github-tray-header-stars",
+      });
+
+      const starIcon = new St.Label({
+        text: "⭐",
+        style: "font-size: 10px;",
+      });
+      starsBox.add_child(starIcon);
+
+      const totalStarsLabel = new St.Label({
+        text: this._formatNumber(totalStars),
+        style: "font-size: 11px; font-weight: 600; color: #ffd700;",
+      });
+      starsBox.add_child(totalStarsLabel);
+      headerBox.add_child(starsBox);
+
+      headerItem.add_child(headerBox);
+      this._headerSection.addMenuItem(headerItem);
+      this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+      if (repos.length === 0) {
+        this._showMessage(_("No repositories found"));
+        return;
       }
-      this._indicator.menu.close();
-    });
-    headerBox.add_child(usernameBtn);
 
-    // Spacer
-    const spacer = new St.Widget({ x_expand: true });
-    headerBox.add_child(spacer);
-
-    // Stars badge - GitHub style
-    const starsBox = new St.BoxLayout({
-      vertical: false,
-      style:
-        "spacing: 6px; padding: 4px 10px; " +
-        "background: rgba(255, 215, 0, 0.1); " +
-        "border-radius: 6px; " +
-        "border: 1px solid rgba(255, 215, 0, 0.2);",
-    });
-
-    const starIcon = new St.Label({
-      text: "⭐",
-      style: "font-size: 12px;",
-    });
-    starsBox.add_child(starIcon);
-
-    const totalStarsLabel = new St.Label({
-      text: this._formatNumber(totalStars),
-      style: "font-size: 12px; font-weight: 600; color: #ffd700;",
-    });
-    starsBox.add_child(totalStarsLabel);
-    headerBox.add_child(starsBox);
-
-    headerItem.add_child(headerBox);
-    this._headerSection.addMenuItem(headerItem);
-    this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-    if (repos.length === 0) {
-      this._showMessage(_("No repositories found"));
-      return;
-    }
-
-    for (const repo of repos) {
-      const item = this._createRepoItem(repo);
-      this._reposContainer.addMenuItem(item);
+      for (const repo of repos) {
+        const item = this._createRepoItem(repo);
+        this._reposContainer.addMenuItem(item);
+      }
+    } catch (e) {
+      logError(e, "GitHubTray:updateMenu");
     }
   }
 
   _createRepoItem(repo) {
     const menuItem = new PopupMenu.PopupBaseMenuItem({
-      style_class: "github-repo-menu-item",
+      style_class: "github-tray-repo-item",
       can_focus: true,
     });
 
@@ -621,49 +710,21 @@ export default class GitHubTrayExtension extends Extension {
     const mainBox = new St.BoxLayout({
       vertical: false,
       x_expand: true,
-      style: "spacing: 6px;",
     });
 
     const outerBox = new St.BoxLayout({
       vertical: true,
       x_expand: true,
-      style:
-        "padding: 6px 10px; spacing: 4px; " +
-        "border-radius: 6px; " +
-        "background: #0d1117; " + // GitHub dark background
-        "border: " +
-        (localPath ? "2px solid #238636; " : "1px solid #21262d; ") + // Green border if local path exists
-        "transition-duration: 100ms;",
-    });
-
-    // Add hover effect styling - GitHub style
-    menuItem.connect("enter-event", () => {
-      outerBox.set_style(
-        "padding: 6px 10px; spacing: 4px; " +
-          "border-radius: 6px; " +
-          "background: #161b22; " + // GitHub hover background
-          "border: " +
-          (localPath ? "2px solid #2ea043; " : "1px solid #30363d; ") +
-          "transition-duration: 100ms;",
-      );
-    });
-
-    menuItem.connect("leave-event", () => {
-      outerBox.set_style(
-        "padding: 6px 10px; spacing: 4px; " +
-          "border-radius: 6px; " +
-          "background: #0d1117; " +
-          "border: " +
-          (localPath ? "2px solid #238636; " : "1px solid #21262d; ") +
-          "transition-duration: 100ms;",
-      );
+      style_class: localPath
+        ? "github-tray-repo-box-local"
+        : "github-tray-repo-box",
     });
 
     // Top row: name + language
     const topRow = new St.BoxLayout({
       vertical: false,
       x_expand: true,
-      style: "spacing: 6px;",
+      style: "spacing: 4px;",
     });
 
     // Show full_name (owner/repo) or just repo name
@@ -675,7 +736,7 @@ export default class GitHubTrayExtension extends Extension {
 
     const nameLabel = new St.Label({
       text: repoDisplayName,
-      style: "font-weight: 600; font-size: 13px; color: #58a6ff;", // GitHub blue for repo names
+      style_class: "github-tray-repo-name",
       x_expand: true,
     });
     nameLabel.clutter_text.set_ellipsize(3); // Pango.EllipsizeMode.END
@@ -685,19 +746,15 @@ export default class GitHubTrayExtension extends Extension {
       const langColor = LANG_COLORS[repo.language] || "#8b949e";
       const langBox = new St.BoxLayout({
         vertical: false,
-        style:
-          "spacing: 5px; padding: 3px 8px; " +
-          "background: rgba(110, 118, 129, 0.1); " + // GitHub tag background
-          "border-radius: 12px; " + // GitHub rounded tag
-          "border: 1px solid rgba(110, 118, 129, 0.2);",
+        style_class: "github-tray-repo-lang-box",
       });
       const langDot = new St.Label({
         text: "●",
-        style: `font-size: 10px; color: ${langColor};`,
+        style: `font-size: 8px; color: ${langColor};`,
       });
       const langLabel = new St.Label({
         text: repo.language,
-        style: "font-size: 10px; font-weight: 500; color: #c9d1d9;", // GitHub text
+        style_class: "github-tray-repo-lang-text",
       });
       langBox.add_child(langDot);
       langBox.add_child(langLabel);
@@ -709,19 +766,13 @@ export default class GitHubTrayExtension extends Extension {
     // Quick links row (Issues, Fork, etc.) - GitHub style
     const linksRow = new St.BoxLayout({
       vertical: false,
-      style: "spacing: 6px; margin-top: 4px;",
+      style_class: "github-tray-links-row",
     });
 
     // Issues link - GitHub style
     const issuesBtn = new St.Button({
       label: `🔴 ${repo.open_issues_count}`,
-      style_class: "button",
-      style:
-        "padding: 3px 8px; font-size: 10px; font-weight: 500; " +
-        "background: rgba(248, 81, 73, 0.1); " + // GitHub red
-        "border-radius: 6px; " +
-        "color: #f85149; " +
-        "border: 1px solid rgba(248, 81, 73, 0.2);",
+      style_class: "button github-tray-link-btn",
       can_focus: true,
     });
     issuesBtn.connect("clicked", () => {
@@ -738,13 +789,7 @@ export default class GitHubTrayExtension extends Extension {
     if (repo.fork && repo.parent) {
       const forkBtn = new St.Button({
         label: "🔀 parent",
-        style_class: "button",
-        style:
-          "padding: 3px 8px; font-size: 10px; font-weight: 500; " +
-          "background: rgba(88, 166, 255, 0.1); " + // GitHub blue
-          "border-radius: 6px; " +
-          "color: #58a6ff; " +
-          "border: 1px solid rgba(88, 166, 255, 0.2);",
+        style_class: "button github-tray-link-btn-blue",
         can_focus: true,
       });
       forkBtn.connect("clicked", () => {
@@ -763,7 +808,7 @@ export default class GitHubTrayExtension extends Extension {
     // Bottom row: stats with GitHub styling
     const statsRow = new St.BoxLayout({
       vertical: false,
-      style: "spacing: 14px; margin-top: 4px;",
+      style_class: "github-tray-stats-row",
     });
 
     // Stars - GitHub style
@@ -784,7 +829,7 @@ export default class GitHubTrayExtension extends Extension {
     const updatedStr = this._relativeTime(repo.updated_at);
     const updatedLabel = new St.Label({
       text: `Updated ${updatedStr}`,
-      style: "font-size: 10px; color: #8b949e; font-weight: 400;", // GitHub muted text
+      style_class: "github-tray-updated",
       x_expand: true,
       x_align: Clutter.ActorAlign.END,
     });
@@ -794,8 +839,8 @@ export default class GitHubTrayExtension extends Extension {
     if (localPath) {
       const folderIcon = new St.Icon({
         icon_name: "folder-symbolic",
-        icon_size: 12,
-        style: "color: #238636; margin-left: 6px;", // GitHub green
+        icon_size: 10,
+        style_class: "github-tray-folder-icon",
       });
       statsRow.add_child(folderIcon);
     }
@@ -806,9 +851,7 @@ export default class GitHubTrayExtension extends Extension {
     if (repo.description) {
       const descLabel = new St.Label({
         text: repo.description,
-        style:
-          "font-size: 11px; color: #8b949e; margin-top: 2px; " + // GitHub muted text
-          "font-weight: 400; line-height: 1.4;",
+        style_class: "github-tray-description",
         x_expand: true,
       });
       descLabel.clutter_text.set_ellipsize(3);
@@ -878,15 +921,15 @@ export default class GitHubTrayExtension extends Extension {
   _statWidget(icon, text, color, shadow = "") {
     const box = new St.BoxLayout({
       vertical: false,
-      style: "spacing: 4px;", // GitHub minimal style, no background
+      style_class: "github-tray-stat",
     });
     const iconLabel = new St.Label({
       text: icon,
-      style: `font-size: 11px;`, // Slightly larger
+      style_class: "github-tray-stat-icon",
     });
     const valueLabel = new St.Label({
       text: text,
-      style: `font-size: 11px; font-weight: 400; color: ${color};`, // GitHub weight
+      style: `font-size: 10px; font-weight: 400; color: ${color};`,
     });
     box.add_child(iconLabel);
     box.add_child(valueLabel);
@@ -916,11 +959,16 @@ export default class GitHubTrayExtension extends Extension {
   }
 
   _showMessage(text) {
-    this._reposContainer.removeAll();
-    const item = new PopupMenu.PopupMenuItem(text, {
-      reactive: false,
-      can_focus: false,
-    });
-    this._reposContainer.addMenuItem(item);
+    if (!this._reposContainer) return;
+    try {
+      this._reposContainer.removeAll();
+      const item = new PopupMenu.PopupMenuItem(text, {
+        reactive: false,
+        can_focus: false,
+      });
+      this._reposContainer.addMenuItem(item);
+    } catch (e) {
+      logError(e, "GitHubTray:showMessage");
+    }
   }
 }

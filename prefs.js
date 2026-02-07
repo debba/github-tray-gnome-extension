@@ -1,8 +1,5 @@
 import Gtk from "gi://Gtk";
 import Adw from "gi://Adw";
-import Gio from "gi://Gio";
-import GLib from "gi://GLib";
-import Soup from "gi://Soup";
 import {
   ExtensionPreferences,
   gettext as _,
@@ -182,6 +179,25 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
     mappingsGroup.add(addButtonRow);
 
     page.add(mappingsGroup);
+
+    // --- Debug group ---
+    const debugGroup = new Adw.PreferencesGroup({
+      title: _("Debug"),
+      description: _("Enable debug features for testing"),
+    });
+
+    // Debug mode toggle
+    const debugRow = new Adw.SwitchRow({
+      title: _("Debug Mode"),
+      subtitle: _("Show debug button in menu to test notifications"),
+      active: settings.get_boolean("debug-mode"),
+    });
+    debugRow.connect("notify::active", () => {
+      settings.set_boolean("debug-mode", debugRow.active);
+    });
+    debugGroup.add(debugRow);
+
+    page.add(debugGroup);
 
     window.add(page);
   }

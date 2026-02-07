@@ -102,17 +102,22 @@ journalctl -f -o cat /usr/bin/gnome-shell
 
 ## Development
 
-Edit code, then:
+For a complete development guide, see [dev/DEVELOPMENT.md](dev/DEVELOPMENT.md).
+
+Quick commands:
+
+```bash
+./dev/install-dev.sh       # Install in development mode
+./dev/test-nested.sh       # Test in nested GNOME Shell (Wayland-friendly)
+./dev/reload-extension.sh  # Quick reload after changes
+./dev/dev-logs.sh          # Watch logs filtered for this extension
+```
+
+Or use the Makefile:
 
 ```bash
 make install
 # Reload shell (Alt+F2 → r on X11, or logout on Wayland)
-```
-
-Watch logs:
-
-```bash
-journalctl -f -o cat /usr/bin/gnome-shell
 ```
 
 ---

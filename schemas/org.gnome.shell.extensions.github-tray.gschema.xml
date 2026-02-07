@@ -41,5 +41,10 @@
       <summary>Local project paths</summary>
       <description>JSON mapping of repository names to local paths</description>
     </key>
+    <key name="debug-mode" type="b">
+      <default>false</default>
+      <summary>Debug mode</summary>
+      <description>Enable debug mode to show debug button for testing notifications</description>
+    </key>
   </schema>
 </schemalist>
