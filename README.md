@@ -21,8 +21,7 @@ A GNOME Shell extension that puts your GitHub repos right in your top bar. Check
 
 - GNOME Shell 45+
 - libsoup3 (you probably already have it)
-- zenity (for folder picker, install with `sudo pacman -S zenity` or similar)
-
+  
 ## Installation
 
 ```bash
