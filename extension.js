@@ -235,8 +235,8 @@ export default class GitHubTrayExtension extends Extension {
       },
     );
 
-    // Initial load
-    this._loadRepositories();
+    // Initial load - wait for network connection
+    this._waitForNetworkAndLoad();
 
     // Auto-refresh every 5 minutes
     this._refreshTimeout = GLib.timeout_add_seconds(
@@ -309,6 +309,11 @@ export default class GitHubTrayExtension extends Extension {
       this._indicator.menu.disconnect(this._menuOpenChangedId);
       this._menuOpenChangedId = null;
     }
+    if (this._networkChangedId) {
+      const networkMonitor = Gio.NetworkMonitor.get_default();
+      networkMonitor.disconnect(this._networkChangedId);
+      this._networkChangedId = null;
+    }
     if (this._indicator) {
       this._indicator.destroy();
       this._indicator = null;
@@ -332,6 +337,32 @@ export default class GitHubTrayExtension extends Extension {
       }
       return GLib.SOURCE_REMOVE;
     });
+  }
+
+  _waitForNetworkAndLoad() {
+    const networkMonitor = Gio.NetworkMonitor.get_default();
+
+    // Use get_connectivity() to check actual internet connectivity
+    if (networkMonitor.get_connectivity() === Gio.NetworkConnectivity.FULL) {
+      // Network has full internet connectivity
+      this._loadRepositories();
+    } else {
+      // No internet connectivity, show message and wait
+      this._showMessage(_("Waiting for network connection..."));
+
+      // Connect to network-changed signal
+      this._networkChangedId = networkMonitor.connect("network-changed", (monitor) => {
+        if (monitor.get_connectivity() === Gio.NetworkConnectivity.FULL && this._indicator) {
+          // Internet is back, load repositories
+          this._loadRepositories();
+          // Disconnect after first successful connection
+          if (this._networkChangedId) {
+            monitor.disconnect(this._networkChangedId);
+            this._networkChangedId = null;
+          }
+        }
+      });
+    }
   }
 
   async _loadRepositories() {
@@ -639,7 +670,6 @@ export default class GitHubTrayExtension extends Extension {
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
         style_class: "github-tray-header",
-        style: "spacing: 8px;",
       });
 
       const usernameBtn = new St.Button({
@@ -664,19 +694,19 @@ export default class GitHubTrayExtension extends Extension {
       const spacer = new St.Widget({ x_expand: true });
       headerBox.add_child(spacer);
 
-      // Repos count badge
+      // Repos count badge (totali, non solo quelli visualizzati)
       const reposCountBox = new St.BoxLayout({
         vertical: false,
-        style: "spacing: 4px; padding: 5px 10px; background-color: rgba(139, 148, 158, 0.08); border-radius: 20px; border: 1px solid rgba(139, 148, 158, 0.15);",
+        style_class: "github-tray-header-badge github-tray-header-repos",
       });
       const reposIcon = new St.Label({
         text: "📦",
-        style: "font-size: 10px;",
+        style_class: "github-tray-header-icon",
       });
       reposCountBox.add_child(reposIcon);
       const reposCountLabel = new St.Label({
-        text: `${repos.length}`,
-        style: "font-size: 11px; font-weight: 600; color: #b1bac4;",
+        text: this._formatNumber(userInfo?.public_repos || repos.length),
+        style_class: "github-tray-header-repos-text",
       });
       reposCountBox.add_child(reposCountLabel);
       headerBox.add_child(reposCountBox);
@@ -684,19 +714,18 @@ export default class GitHubTrayExtension extends Extension {
       // Stars badge - GitHub style
       const starsBox = new St.BoxLayout({
         vertical: false,
-        style_class: "github-tray-header-stars",
-        style: "spacing: 4px;",
+        style_class: "github-tray-header-badge github-tray-header-stars",
       });
 
       const starIcon = new St.Label({
         text: "⭐",
-        style: "font-size: 10px;",
+        style_class: "github-tray-header-icon",
       });
       starsBox.add_child(starIcon);
 
       const totalStarsLabel = new St.Label({
         text: this._formatNumber(totalStars),
-        style: "font-size: 11px; font-weight: 600; color: #e3b341;",
+        style_class: "github-tray-header-stars-text",
       });
       starsBox.add_child(totalStarsLabel);
       headerBox.add_child(starsBox);
@@ -748,7 +777,7 @@ export default class GitHubTrayExtension extends Extension {
       vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
-      style: "spacing: 6px;",
+      style_class: "github-tray-top-row",
     });
 
     // Show full_name (owner/repo) or just repo name
@@ -758,13 +787,27 @@ export default class GitHubTrayExtension extends Extension {
         ? repo.full_name
         : repo.name;
 
-    const nameLabel = new St.Label({
-      text: repoDisplayName,
-      style_class: "github-tray-repo-name",
+    // Repo name as clickable button with hover effect
+    const nameBtn = new St.Button({
+      label: repoDisplayName,
+      style_class: "button github-tray-repo-name",
+      can_focus: true,
       x_expand: true,
     });
-    nameLabel.clutter_text.set_ellipsize(3); // Pango.EllipsizeMode.END
-    topRow.add_child(nameLabel);
+    // Set ellipsize for the button label
+    const nameBtnChild = nameBtn.get_child();
+    if (nameBtnChild && nameBtnChild.clutter_text) {
+      nameBtnChild.clutter_text.set_ellipsize(3);
+    }
+    nameBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(repo.html_url, null);
+      } catch (e) {
+        logError(e, "GitHubTray:open-repo");
+      }
+      this._indicator.menu.close();
+    });
+    topRow.add_child(nameBtn);
 
     if (repo.language) {
       const langColor = LANG_COLORS[repo.language] || "#8b949e";
@@ -819,29 +862,92 @@ export default class GitHubTrayExtension extends Extension {
       vertical: false,
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-stats-row",
-      style: "spacing: 4px;",
     });
 
-    // Stars - GitHub style
-    statsRow.add_child(
-      this._statWidget(
-        "⭐",
-        this._formatNumber(repo.stargazers_count),
-        "#b1bac4",
-      ),
-    );
+    // Stars - GitHub style (con hover)
+    const starsBox = new St.BoxLayout({
+      vertical: false,
+      style_class: "github-tray-stat",
+    });
+    const starsIcon = new St.Label({
+      text: "⭐",
+      style_class: "github-tray-stat-icon",
+    });
+    const starsLabel = new St.Label({
+      text: this._formatNumber(repo.stargazers_count),
+      style_class: "github-tray-stat-value",
+    });
+    starsBox.add_child(starsIcon);
+    starsBox.add_child(starsLabel);
 
-    // Forks - GitHub style
-    statsRow.add_child(
-      this._statWidget("🍴", this._formatNumber(repo.forks_count), "#b1bac4"),
-    );
+    const starsBtn = new St.Button({
+      style_class: "button github-tray-stars-btn",
+      can_focus: true,
+    });
+    starsBtn.set_child(starsBox);
+    starsBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/stargazers`, null);
+      } catch (e) {
+        logError(e, "GitHubTray:open-stars");
+      }
+      this._indicator.menu.close();
+    });
+    statsRow.add_child(starsBtn);
 
-    // Issues - GitHub style
+    // Forks - GitHub style (con hover)
+    const forksBox = new St.BoxLayout({
+      vertical: false,
+      style_class: "github-tray-stat",
+    });
+    const forksIcon = new St.Label({
+      text: "🍴",
+      style_class: "github-tray-stat-icon",
+    });
+    const forksLabel = new St.Label({
+      text: this._formatNumber(repo.forks_count),
+      style_class: "github-tray-stat-value",
+    });
+    forksBox.add_child(forksIcon);
+    forksBox.add_child(forksLabel);
+
+    const forksBtn = new St.Button({
+      style_class: "button github-tray-forks-btn",
+      can_focus: true,
+    });
+    forksBtn.set_child(forksBox);
+    forksBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/network/members`, null);
+      } catch (e) {
+        logError(e, "GitHubTray:open-forks");
+      }
+      this._indicator.menu.close();
+    });
+    statsRow.add_child(forksBtn);
+
+    // Issues - GitHub style (allineato con stars e forks)
+    const issuesBox = new St.BoxLayout({
+      vertical: false,
+      style_class: "github-tray-stat",
+    });
+    const issuesIcon = new St.Label({
+      text: "🔴",
+      style_class: "github-tray-stat-icon",
+    });
+    const issuesLabel = new St.Label({
+      text: this._formatNumber(repo.open_issues_count),
+      style_class: "github-tray-stat-value github-tray-issues-value",
+    });
+    issuesBox.add_child(issuesIcon);
+    issuesBox.add_child(issuesLabel);
+    
+    // Wrap issues in a button for clickability
     const issuesBtn = new St.Button({
-      label: `🔴 ${repo.open_issues_count}`,
       style_class: "button github-tray-issues-btn",
       can_focus: true,
     });
+    issuesBtn.set_child(issuesBox);
     issuesBtn.connect("clicked", () => {
       try {
         Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/issues`, null);
