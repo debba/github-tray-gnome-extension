@@ -115,14 +115,10 @@ export default class GitHubTrayExtension extends Extension {
       can_focus: true,
     });
     refreshBtn.connect("clicked", () => {
-      this._indicator.menu.close();
-      // Delay load to let menu close animation finish
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
-        if (this._indicator) {
-          this._loadRepositories();
-        }
-        return GLib.SOURCE_REMOVE;
-      });
+      // Start loading without closing the menu
+      if (this._indicator) {
+        this._loadRepositories(true); // Pass true to indicate refresh from button
+      }
     });
     bottomLayout.add_child(refreshBtn);
 
@@ -365,7 +361,7 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
-  async _loadRepositories() {
+  async _loadRepositories(manualRefresh = false) {
     if (this._isLoading || !this._indicator) return;
 
     const token = this._settings?.get_string("github-token");
@@ -377,6 +373,7 @@ export default class GitHubTrayExtension extends Extension {
     }
 
     this._isLoading = true;
+    const wasOpen = this._indicator.menu.isOpen;
 
     // Don't show loading message if menu is open to avoid flickering
     if (!this._indicator.menu.isOpen) {
@@ -400,8 +397,19 @@ export default class GitHubTrayExtension extends Extension {
       const oldRepos = this._lastRepos;
       this._lastRepos = repos;
 
-      // Only update menu if it's not currently open to avoid rendering issues
-      if (!this._indicator.menu.isOpen) {
+      // Handle manual refresh from button - close and reopen menu to show updates
+      if (manualRefresh && wasOpen) {
+        this._pendingUpdate = { repos, username, userInfo };
+        this._indicator.menu.close();
+        // Reopen menu after close animation completes
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 400, () => {
+          if (this._indicator) {
+            this._indicator.menu.open();
+          }
+          return GLib.SOURCE_REMOVE;
+        });
+      } else if (!this._indicator.menu.isOpen) {
+        // Only update menu if it's not currently open to avoid rendering issues
         this._updateMenu(repos, username, userInfo);
       } else {
         // Menu is open - store update for later when menu closes
