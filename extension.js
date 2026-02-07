@@ -793,6 +793,7 @@ export default class GitHubTrayExtension extends Extension {
       style_class: "button github-tray-repo-name",
       can_focus: true,
       x_expand: true,
+      x_align: Clutter.ActorAlign.START,
     });
     // Set ellipsize for the button label
     const nameBtnChild = nameBtn.get_child();
@@ -982,10 +983,7 @@ export default class GitHubTrayExtension extends Extension {
       outerBox.add_child(descLabel);
     }
 
-    // Add repo info to main box
-    mainBox.add_child(outerBox);
-
-    // Add prominent folder button if local path exists
+    // Add prominent folder button if local path exists (left side)
     if (localPath) {
       const folderBtn = new St.Button({
         style_class: "button github-tray-folder-btn",
@@ -1003,6 +1001,9 @@ export default class GitHubTrayExtension extends Extension {
       });
       mainBox.add_child(folderBtn);
     }
+
+    // Add repo info to main box
+    mainBox.add_child(outerBox);
 
     menuItem.add_child(mainBox);
 

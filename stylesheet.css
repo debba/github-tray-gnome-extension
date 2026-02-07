@@ -167,6 +167,11 @@
   border: none;
   padding: 0;
   border-radius: 4px;
+  -st-natural-width: 0;
+}
+
+.github-tray-repo-name > StLabel {
+  -st-text-align: left;
 }
 
 .github-tray-repo-name:hover {
