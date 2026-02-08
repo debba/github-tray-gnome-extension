@@ -37,8 +37,17 @@ msgstr "GitHub Tray"
 msgid "Failed to fetch repositories: %s"
 msgstr "Impossibile caricare i repository: %s"
 
-msgid "New stars: %s"
-msgstr "Nuove stelle: %s"
+msgid "New Stars!"
+msgstr "Nuove Stelle!"
+
+msgid "New Issues Opened"
+msgstr "Nuove Issue Aperte"
+
+msgid "New Forks Created"
+msgstr "Nuovi Fork Creati"
+
+msgid "Waiting for network connection..."
+msgstr "In attesa della connessione di rete..."
 
 msgid "No repositories found"
 msgstr "Nessun repository trovato"
@@ -59,8 +68,8 @@ msgid "%d mo ago"
 msgstr "%d mesi fa"
 
 # prefs.js
-msgid "GitHub Authentication"
-msgstr "Autenticazione GitHub"
+msgid "Authentication"
+msgstr "Autenticazione"
 
 msgid "Create a token at github.com/settings/tokens\nRequired scopes: repo (private) or public_repo (public only)"
 msgstr "Crea un token su github.com/settings/tokens\nScope richiesti: repo (privati) o public_repo (solo pubblici)"
@@ -70,6 +79,45 @@ msgstr "Username GitHub"
 
 msgid "Personal Access Token"
 msgstr "Token di Accesso Personale"
+
+msgid "Sorting"
+msgstr "Ordinamento"
+
+msgid "Configure how repositories are sorted"
+msgstr "Configura come ordinare i repository"
+
+msgid "Sort by"
+msgstr "Ordina per"
+
+msgid "Criteria for sorting repositories"
+msgstr "Criterio di ordinamento dei repository"
+
+msgid "Last Updated"
+msgstr "Ultimo Aggiornamento"
+
+msgid "Last Pushed"
+msgstr "Ultimo Push"
+
+msgid "Created Date"
+msgstr "Data di Creazione"
+
+msgid "Stars"
+msgstr "Stelle"
+
+msgid "Name"
+msgstr "Nome"
+
+msgid "Sort order"
+msgstr "Ordine"
+
+msgid "Ascending or descending order"
+msgstr "Ordine crescente o decrescente"
+
+msgid "Descending"
+msgstr "Decrescente"
+
+msgid "Ascending"
+msgstr "Crescente"
 
 msgid "Display"
 msgstr "Visualizzazione"
@@ -97,3 +145,78 @@ msgstr "Repository massimi"
 
 msgid "Maximum number of repositories to display"
 msgstr "Numero massimo di repository da visualizzare"
+
+msgid "Local Projects"
+msgstr "Progetti Locali"
+
+msgid "Configure local editor for opening projects"
+msgstr "Configura l'editor locale per aprire i progetti"
+
+msgid "Editor Command"
+msgstr "Comando Editor"
+
+msgid "Repository Path Mappings"
+msgstr "Mappature Percorsi Repository"
+
+msgid "Manage local paths for your repositories"
+msgstr "Gestisci i percorsi locali per i tuoi repository"
+
+msgid "Add New Mapping"
+msgstr "Aggiungi Nuova Mappatura"
+
+msgid "No mappings configured"
+msgstr "Nessuna mappatura configurata"
+
+msgid "Click \"Add New Mapping\" to set up local paths"
+msgstr "Clicca \"Aggiungi Nuova Mappatura\" per configurare i percorsi locali"
+
+msgid "Add Repository Mapping"
+msgstr "Aggiungi Mappatura Repository"
+
+msgid "Repository (owner/name):"
+msgstr "Repository (proprietario/nome):"
+
+msgid "Local Path:"
+msgstr "Percorso Locale:"
+
+msgid "Browse..."
+msgstr "Sfoglia..."
+
+msgid "Select Repository Path"
+msgstr "Seleziona Percorso Repository"
+
+msgid "Cancel"
+msgstr "Annulla"
+
+msgid "Select"
+msgstr "Seleziona"
+
+msgid "Add"
+msgstr "Aggiungi"
+
+msgid "Debug"
+msgstr "Debug"
+
+msgid "Enable debug features for testing"
+msgstr "Abilita funzionalità di debug per i test"
+
+msgid "Debug Mode"
+msgstr "Modalità Debug"
+
+msgid "Show debug button in menu to test notifications"
+msgstr "Mostra il pulsante debug nel menu per testare le notifiche"
+
+msgid "🔀 parent"
+msgstr "🔀 padre"
+
+msgid "Updated %s"
+msgstr "Aggiornato %s"
+
+msgid "Open in Browser"
+msgstr "Apri nel Browser"
+
+msgid "Open Locally"
+msgstr "Apri Localmente"
+
+msgid "Copy URL"
+msgstr "Copia URL"
