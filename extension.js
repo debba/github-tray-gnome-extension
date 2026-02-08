@@ -135,7 +135,12 @@ export default class GitHubTrayExtension extends Extension {
     if (manualRefresh && wasOpen) {
       this._pendingUpdate = { repos, username, userInfo };
       this._indicator.menu.close();
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, 400, () => {
+      if (this._menuReopenTimeout) {
+        GLib.source_remove(this._menuReopenTimeout);
+        this._menuReopenTimeout = null;
+      }
+      this._menuReopenTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 400, () => {
+        this._menuReopenTimeout = null;
         if (this._indicator) {
           this._indicator.menu.open();
         }
@@ -149,6 +154,10 @@ export default class GitHubTrayExtension extends Extension {
   }
 
   _scheduleChangeDetection(newRepos, oldRepos) {
+    if (this._detectChangesTimeoutId) {
+      GLib.source_remove(this._detectChangesTimeoutId);
+      this._detectChangesTimeoutId = null;
+    }
     this._detectChangesTimeoutId = GLib.timeout_add(
       GLib.PRIORITY_DEFAULT,
       100,
@@ -246,7 +255,12 @@ export default class GitHubTrayExtension extends Extension {
 
   _handleMenuClose() {
     if (this._pendingUpdate || this._pendingDetectChanges) {
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+      if (this._menuCloseTimeout) {
+        GLib.source_remove(this._menuCloseTimeout);
+        this._menuCloseTimeout = null;
+      }
+      this._menuCloseTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+        this._menuCloseTimeout = null;
         if (!this._indicator) return GLib.SOURCE_REMOVE;
 
         if (this._pendingUpdate) {
@@ -356,6 +370,14 @@ export default class GitHubTrayExtension extends Extension {
     if (this._detectChangesTimeoutId) {
       GLib.source_remove(this._detectChangesTimeoutId);
       this._detectChangesTimeoutId = null;
+    }
+    if (this._menuReopenTimeout) {
+      GLib.source_remove(this._menuReopenTimeout);
+      this._menuReopenTimeout = null;
+    }
+    if (this._menuCloseTimeout) {
+      GLib.source_remove(this._menuCloseTimeout);
+      this._menuCloseTimeout = null;
     }
   }
 
