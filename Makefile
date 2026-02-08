@@ -5,10 +5,7 @@ LOCALE_DIR = locale
 
 all: build
 
-build: schemas translations
-
-schemas:
-	glib-compile-schemas $(SCHEMAS_DIR)
+build: translations
 
 translations:
 	@for po in po/*.po; do \
