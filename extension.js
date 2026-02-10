@@ -438,6 +438,7 @@ export default class GitHubTrayExtension extends Extension {
   }
 
   _cleanupState() {
+    this._httpSession.abort();
     this._httpSession = null;
     this._settings = null;
     this._lastRepos = null;
