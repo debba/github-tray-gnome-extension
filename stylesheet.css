@@ -51,6 +51,26 @@
   spacing: 8px;
 }
 
+.github-tray-header-top-row {
+  spacing: 8px;
+}
+
+.github-tray-header-bottom-row {
+  spacing: 8px;
+  margin-top: 8px;
+}
+
+.github-tray-header-user-box {
+  spacing: 10px;
+  y-align: center;
+}
+
+.github-tray-header-avatar {
+  border-radius: 50px;
+  border: 2px solid rgba(88, 166, 255, 0.4);
+  background-color: rgba(13, 17, 23, 0.8);
+}
+
 .github-tray-header-user {
   font-weight: 700;
   font-size: 13px;
@@ -76,6 +96,18 @@
 
 .github-tray-header-icon {
   font-size: 10px;
+  y-align: center;
+}
+
+.github-tray-header-followers {
+  background-color: rgba(139, 148, 158, 0.08);
+  border: 1px solid rgba(139, 148, 158, 0.15);
+}
+
+.github-tray-header-followers-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #b1bac4;
   y-align: center;
 }
 

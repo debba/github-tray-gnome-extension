@@ -138,10 +138,34 @@ export class GitHubTrayUI {
         can_focus: false,
       });
       const headerBox = new St.BoxLayout({
+        vertical: true,
         x_expand: true,
-        y_align: Clutter.ActorAlign.CENTER,
         style_class: "github-tray-header",
       });
+
+      // First row: Avatar + username + followers
+      const topRow = new St.BoxLayout({
+        vertical: false,
+        x_expand: true,
+        y_align: Clutter.ActorAlign.CENTER,
+        style_class: "github-tray-header-top-row",
+      });
+
+      // Avatar + username button container
+      const userBox = new St.BoxLayout({
+        vertical: false,
+        style_class: "github-tray-header-user-box",
+      });
+
+      // Avatar image
+      if (userInfo?.avatar_url) {
+        const avatarIcon = new St.Icon({
+          gicon: Gio.Icon.new_for_string(userInfo.avatar_url),
+          icon_size: 24,
+          style_class: "github-tray-header-avatar",
+        });
+        userBox.add_child(avatarIcon);
+      }
 
       const usernameBtn = new St.Button({
         label: `@${username}`,
@@ -159,10 +183,41 @@ export class GitHubTrayUI {
         }
         this._indicator.menu.close();
       });
-      headerBox.add_child(usernameBtn);
+      userBox.add_child(usernameBtn);
+
+      topRow.add_child(userBox);
 
       const spacer = new St.Widget({ x_expand: true });
-      headerBox.add_child(spacer);
+      topRow.add_child(spacer);
+
+      // Followers count badge
+      if (userInfo?.followers !== undefined) {
+        const followersBox = new St.BoxLayout({
+          vertical: false,
+          style_class: "github-tray-header-badge github-tray-header-followers",
+        });
+        const followersIcon = new St.Label({
+          text: "👥",
+          style_class: "github-tray-header-icon",
+        });
+        followersBox.add_child(followersIcon);
+        const followersLabel = new St.Label({
+          text: formatNumber(userInfo.followers),
+          style_class: "github-tray-header-followers-text",
+        });
+        followersBox.add_child(followersLabel);
+        topRow.add_child(followersBox);
+      }
+
+      headerBox.add_child(topRow);
+
+      // Second row: Repos count + Stars
+      const bottomRow = new St.BoxLayout({
+        vertical: false,
+        x_expand: true,
+        y_align: Clutter.ActorAlign.CENTER,
+        style_class: "github-tray-header-bottom-row",
+      });
 
       // Repos count badge
       const reposCountBox = new St.BoxLayout({
@@ -179,7 +234,7 @@ export class GitHubTrayUI {
         style_class: "github-tray-header-repos-text",
       });
       reposCountBox.add_child(reposCountLabel);
-      headerBox.add_child(reposCountBox);
+      bottomRow.add_child(reposCountBox);
 
       // Stars badge
       const starsBox = new St.BoxLayout({
@@ -198,7 +253,9 @@ export class GitHubTrayUI {
         style_class: "github-tray-header-stars-text",
       });
       starsBox.add_child(totalStarsLabel);
-      headerBox.add_child(starsBox);
+      bottomRow.add_child(starsBox);
+
+      headerBox.add_child(bottomRow);
 
       headerItem.add_child(headerBox);
       this._headerSection.addMenuItem(headerItem);

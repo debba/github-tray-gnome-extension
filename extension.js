@@ -10,13 +10,14 @@ import {
 } from "resource:///org/gnome/shell/extensions/extension.js";
 import { GitHubApi } from "./githubApi.js";
 import { GitHubTrayUI } from "./ui.js";
-import { detectChanges } from "./utils.js";
+import { detectChanges, detectNewFollowers } from "./utils.js";
 
 export default class GitHubTrayExtension extends Extension {
   enable() {
     this._settings = this.getSettings();
     this._httpSession = new Soup.Session();
     this._lastRepos = null;
+    this._lastFollowers = null;
     this._isLoading = false;
     this._pendingUpdate = null;
     this._detectChangesTimeoutId = null;
@@ -100,9 +101,10 @@ export default class GitHubTrayExtension extends Extension {
 
     try {
       const api = new GitHubApi(this._httpSession);
-      const [repos, userInfo] = await Promise.all([
+      const [repos, userInfo, followers] = await Promise.all([
         api.fetchRepositories(token, username, this._settings),
         api.fetchUserInfo(token, username),
+        api.fetchFollowers(token),
       ]);
 
       if (!this._indicator) return;
@@ -110,12 +112,14 @@ export default class GitHubTrayExtension extends Extension {
       api.sortRepositories(repos, this._settings);
 
       const oldRepos = this._lastRepos;
+      const oldFollowers = this._lastFollowers;
       this._lastRepos = repos;
+      this._lastFollowers = followers;
 
       this._handleRepoUpdate(repos, username, userInfo, wasOpen, manualRefresh);
 
       if (oldRepos) {
-        this._scheduleChangeDetection(repos, oldRepos);
+        this._scheduleChangeDetection(repos, oldRepos, followers, oldFollowers);
       }
     } catch (error) {
       logError(error, "GitHubTray");
@@ -153,7 +157,7 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
-  _scheduleChangeDetection(newRepos, oldRepos) {
+  _scheduleChangeDetection(newRepos, oldRepos, newFollowers, oldFollowers) {
     if (this._detectChangesTimeoutId) {
       GLib.source_remove(this._detectChangesTimeoutId);
       this._detectChangesTimeoutId = null;
@@ -164,14 +168,14 @@ export default class GitHubTrayExtension extends Extension {
       () => {
         this._detectChangesTimeoutId = null;
         if (this._indicator) {
-          this._detectAndNotify(newRepos, oldRepos);
+          this._detectAndNotify(newRepos, oldRepos, newFollowers, oldFollowers);
         }
         return GLib.SOURCE_REMOVE;
       },
     );
   }
 
-  _detectAndNotify(newRepos, oldRepos) {
+  _detectAndNotify(newRepos, oldRepos, newFollowers, oldFollowers) {
     const changes = detectChanges(newRepos, oldRepos);
     if (!changes || !this._indicator || this._indicator.menu.isOpen) return;
 
@@ -201,6 +205,18 @@ export default class GitHubTrayExtension extends Extension {
         .join("\n");
       this._sendNotification(_("New Forks Created"), forksMsg);
     }
+
+    // Detect new followers
+    const newFollowersList = detectNewFollowers(newFollowers, oldFollowers);
+    if (newFollowersList && newFollowersList.length > 0) {
+      let followersMsg;
+      if (newFollowersList.length === 1) {
+        followersMsg = newFollowersList[0].login;
+      } else {
+        followersMsg = `+${newFollowersList.length} followers`;
+      }
+      this._sendNotification(_("New Followers"), followersMsg);
+    }
   }
 
   _sendNotification(summary, body) {
@@ -220,6 +236,7 @@ export default class GitHubTrayExtension extends Extension {
   _onDebugClick() {
     if (this._lastRepos && this._lastRepos.length >= 1) {
       const oldRepos = this._lastRepos;
+      const oldFollowers = this._lastFollowers || [];
       const username = this._settings.get_string("github-username");
 
       const modifiedRepos = this._lastRepos.map((r, i) => {
@@ -239,13 +256,29 @@ export default class GitHubTrayExtension extends Extension {
         return r;
       });
 
+      // Add mock new followers for testing
+      const newFollowers = [...oldFollowers];
+      const numNewFollowers = Math.random() > 0.5 ? 1 : Math.floor(Math.random() * 3) + 2;
+      for (let i = 0; i < numNewFollowers; i++) {
+        newFollowers.push({
+          id: Date.now() + i,
+          login: `test_follower_${Date.now() + i}`,
+        });
+      }
+
       this._lastRepos = modifiedRepos;
+      this._lastFollowers = newFollowers;
       this._pendingUpdate = {
         repos: modifiedRepos,
         username,
         userInfo: null,
       };
-      this._pendingDetectChanges = { newRepos: modifiedRepos, oldRepos };
+      this._pendingDetectChanges = {
+        newRepos: modifiedRepos,
+        oldRepos,
+        newFollowers,
+        oldFollowers,
+      };
 
       this._indicator.menu.close();
     } else {
@@ -270,9 +303,9 @@ export default class GitHubTrayExtension extends Extension {
         }
 
         if (this._pendingDetectChanges) {
-          const { newRepos, oldRepos } = this._pendingDetectChanges;
+          const { newRepos, oldRepos, newFollowers, oldFollowers } = this._pendingDetectChanges;
           this._pendingDetectChanges = null;
-          this._detectAndNotify(newRepos, oldRepos);
+          this._detectAndNotify(newRepos, oldRepos, newFollowers, oldFollowers);
         }
 
         return GLib.SOURCE_REMOVE;
@@ -408,6 +441,7 @@ export default class GitHubTrayExtension extends Extension {
     this._httpSession = null;
     this._settings = null;
     this._lastRepos = null;
+    this._lastFollowers = null;
     this._pendingUpdate = null;
     this._pendingDetectChanges = null;
     this._ui = null;

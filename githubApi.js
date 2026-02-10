@@ -83,6 +83,31 @@ export class GitHubApi {
     return JSON.parse(data);
   }
 
+  async fetchFollowers(token) {
+    const message = Soup.Message.new(
+      "GET",
+      `${GITHUB_API_URL}/user/followers?per_page=100`,
+    );
+
+    message.request_headers.append("Authorization", `Bearer ${token}`);
+    message.request_headers.append("Accept", "application/vnd.github.v3+json");
+    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+
+    const bytes = await this._httpSession.send_and_read_async(
+      message,
+      GLib.PRIORITY_DEFAULT,
+      null,
+    );
+
+    const statusCode = message.get_status();
+    if (statusCode !== Soup.Status.OK) {
+      throw new Error(`HTTP ${statusCode}`);
+    }
+
+    const data = new TextDecoder().decode(bytes.get_data());
+    return JSON.parse(data);
+  }
+
   sortRepositories(repos, settings) {
     const sortBy = settings.get_string("sort-by");
     const sortOrder = settings.get_string("sort-order");

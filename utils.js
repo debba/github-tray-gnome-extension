@@ -67,3 +67,12 @@ export function detectChanges(newRepos, oldRepos) {
     newForks,
   };
 }
+
+export function detectNewFollowers(newFollowers, oldFollowers) {
+  if (!oldFollowers) return null;
+
+  const oldIds = new Set(oldFollowers.map((f) => f.id));
+  const newFollowersList = newFollowers.filter((f) => !oldIds.has(f.id));
+
+  return newFollowersList;
+}
