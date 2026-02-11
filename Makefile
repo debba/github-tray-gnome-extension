@@ -26,7 +26,7 @@ uninstall:
 
 pack: build
 	@rm -f $(UUID).zip
-	zip -r $(UUID).zip extension.js githubApi.js ui.js utils.js metadata.json stylesheet.css $(SCHEMAS_DIR) icons $(LOCALE_DIR)
+	zip -r $(UUID).zip extension.js githubApi.js ui.js utils.js prefs.js metadata.json stylesheet.css $(SCHEMAS_DIR) icons $(LOCALE_DIR)
 	@echo "Package created: $(UUID).zip"
 
 clean:
