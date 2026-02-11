@@ -251,7 +251,7 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
         group.add(row);
       }
     } catch (e) {
-      log(`Error loading mappings: ${e}`);
+      console.log(`Error loading mappings: ${e}`);
     }
   }
 
@@ -362,7 +362,7 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
       settings.set_string("local-projects", JSON.stringify(localProjects));
       this._updateMappingsList(group, settings);
     } catch (e) {
-      log(`Error adding mapping: ${e}`);
+      console.log(`Error adding mapping: ${e}`);
     }
   }
 
