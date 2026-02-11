@@ -1,4 +1,4 @@
-[![Discord](https://img.shields.io/discord/1470772941296894128?color=5865F2&logo=discord&logoColor=white)](https://discord.gg/WgsVw69F)
+[![Discord](https://img.shields.io/discord/1470772941296894128?color=5865F2&logo=discord&logoColor=white)](https://discord.gg/YrZPHAwMSG)
 
 # GitHub Tray Gnome Extension
 
@@ -6,7 +6,7 @@ A GNOME Shell extension that puts your GitHub repos right in your top bar. Check
 
 ![GitHub Tray Gnome Extension Screenshot](screenshots/overview.png)
 
-**Discord** - [Join our discord server](https://discord.gg/WgsVw69F) and chat with the maintainers.
+**Discord** - [Join our discord server](https://discord.gg/YrZPHAwMSG) and chat with the maintainers.
 
 ## What it does
 
