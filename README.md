@@ -2,7 +2,7 @@
 
 A GNOME Shell extension that puts your GitHub repos right in your top bar. Check stars, issues, and recent activity without opening a browser.
 
-![GitHub Tray Gnome Extension Screenshot](screenshots/screenshot-1.png)
+![GitHub Tray Gnome Extension Screenshot](screenshots/og_image.png)
 
 ## What it does
 
