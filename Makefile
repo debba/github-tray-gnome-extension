@@ -16,17 +16,8 @@ translations:
 
 install: build
 	mkdir -p $(INSTALL_DIR)
-	cp -r extension.js githubApi.js ui.js utils.js metadata.json stylesheet.css $(SCHEMAS_DIR) icons $(INSTALL_DIR)
+	cp -r extension.js githubApi.js ui.js utils.js prefs.js metadata.json stylesheet.css $(SCHEMAS_DIR) icons $(INSTALL_DIR)
 	@if [ -d $(LOCALE_DIR) ]; then cp -r $(LOCALE_DIR) $(INSTALL_DIR); fi
-	@# Detect GNOME Shell version and use the appropriate import path for prefs.js
-	@SHELL_VERSION=$$(gnome-shell --version | sed 's/[^0-9.]*//g' | cut -d. -f1); \
-	if [ "$$SHELL_VERSION" -ge 49 ]; then \
-		echo "Detected GNOME Shell $$SHELL_VERSION - using new import path"; \
-		sed "s|resource:///org/gnome/shell/extensions/prefs.js|resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js|g" prefs.js > $(INSTALL_DIR)/prefs.js; \
-	else \
-		echo "Detected GNOME Shell $$SHELL_VERSION - using legacy import path"; \
-		sed "s|resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js|resource:///org/gnome/shell/extensions/prefs.js|g" prefs.js > $(INSTALL_DIR)/prefs.js; \
-	fi
 	@echo "Extension installed in $(INSTALL_DIR)"
 	@echo "Restart GNOME Shell to see changes."
 

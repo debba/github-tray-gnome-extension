@@ -19,7 +19,7 @@ A GNOME Shell extension that puts your GitHub repos right in your top bar. Check
 
 ## Requirements
 
-- GNOME Shell 45+
+- GNOME Shell 48+
 - libsoup3 (you probably already have it)
   
 ## Installation
