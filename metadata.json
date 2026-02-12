@@ -2,7 +2,7 @@
   "uuid": "github-tray@debba.github.com",
   "name": "GitHub Tray",
   "description": "Display your GitHub repositories in the system tray with stars, issues, forks, and language info",
-  "version": 6,
+  "version": 7,
   "shell-version": ["45", "46", "47", "48", "49"],
   "url": "https://github.com/debba/github-tray-gnome-extension",
   "settings-schema": "org.gnome.shell.extensions.github-tray",

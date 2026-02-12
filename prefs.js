@@ -8,14 +8,13 @@ import {
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
 export default class GitHubTrayPreferences extends ExtensionPreferences {
-  constructor(metadata) {
-    super(metadata);
+
+  fillPreferencesWindow(window) {
+    
     let iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
     let UIFolderPath = `${this.path}/ui`;
     iconTheme.add_search_path(`${UIFolderPath}/icons`);
-  }
-
-  fillPreferencesWindow(window) {
+    
     const settings = this.getSettings();
 
     // Add header bar with support menu
