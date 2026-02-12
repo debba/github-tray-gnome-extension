@@ -6,181 +6,181 @@
 /* ── Notification badge ─────────────────────────────────────── */
 
 .github-tray-badge {
-  font-size: 6px;
-  font-weight: bold;
-  color: #ffffff;
-  background-color: #cf222e;
-  border-radius: 10px;
-  min-width: 12px;
-  min-height: 12px;
-  padding: 1px 3px;
-  margin-left: -8px;
-  margin-top: -6px;
-  border: 2px solid #0d1117;
+    font-size: 6px;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #cf222e;
+    border-radius: 10px;
+    min-width: 12px;
+    min-height: 12px;
+    padding: 1px 3px;
+    margin-left: -8px;
+    margin-top: -6px;
+    border: 2px solid #0d1117;
 }
 
 /* ── Menu container ─────────────────────────────────────────── */
 
 .github-tray-menu {
-  max-width: 340px;
-  min-width: 340px;
+    max-width: 340px;
+    min-width: 340px;
 }
 
 .github-tray-menu-box {
-  padding: 4px 0;
+    padding: 4px 0;
 }
 
 /* ── ScrollView ─────────────────────────────────────────────── */
 
 .github-tray-scrollview {
-  max-height: 420px;
-  min-width: 340px;
+    max-height: 420px;
+    min-width: 340px;
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
 
 .github-tray-header {
-  padding: 12px 14px;
-  background-gradient-direction: vertical;
-  background-gradient-start: #1c2333;
-  background-gradient-end: #0d1117;
-  border-radius: 10px;
-  margin: 4px 8px 2px 8px;
-  border: 1px solid rgba(88, 166, 255, 0.15);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  spacing: 8px;
+    padding: 12px 14px;
+    background-gradient-direction: vertical;
+    background-gradient-start: #1c2333;
+    background-gradient-end: #0d1117;
+    border-radius: 10px;
+    margin: 4px 8px 2px 8px;
+    border: 1px solid rgba(88, 166, 255, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    spacing: 8px;
 }
 
 .github-tray-header-top-row {
-  spacing: 8px;
+    spacing: 8px;
 }
 
 .github-tray-header-bottom-row {
-  spacing: 8px;
-  margin-top: 8px;
+    spacing: 8px;
+    margin-top: 8px;
 }
 
 .github-tray-header-user-box {
-  spacing: 10px;
-  y-align: center;
+    spacing: 10px;
+    y-align: center;
 }
 
 .github-tray-header-avatar {
-  border-radius: 50px;
-  border: 2px solid rgba(88, 166, 255, 0.4);
-  background-color: rgba(13, 17, 23, 0.8);
+    border-radius: 50px;
+    border: 2px solid rgba(88, 166, 255, 0.4);
+    background-color: rgba(13, 17, 23, 0.8);
 }
 
 .github-tray-header-user {
-  font-weight: 700;
-  font-size: 13px;
-  color: #58a6ff;
-  padding: 5px 14px;
-  background-color: rgba(56, 139, 253, 0.1);
-  border: 1px solid rgba(56, 139, 253, 0.25);
-  border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #58a6ff;
+    padding: 5px 14px;
+    background-color: rgba(56, 139, 253, 0.1);
+    border: 1px solid rgba(56, 139, 253, 0.25);
+    border-radius: 20px;
 }
 
 .github-tray-header-user:hover {
-  background-color: rgba(56, 139, 253, 0.2);
-  border: 1px solid rgba(56, 139, 253, 0.5);
-  box-shadow: 0 0 10px rgba(56, 139, 253, 0.15);
+    background-color: rgba(56, 139, 253, 0.2);
+    border: 1px solid rgba(56, 139, 253, 0.5);
+    box-shadow: 0 0 10px rgba(56, 139, 253, 0.15);
 }
 
 .github-tray-header-badge {
-  padding: 5px 12px;
-  border-radius: 20px;
-  y-align: center;
-  spacing: 4px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    y-align: center;
+    spacing: 4px;
 }
 
 .github-tray-header-icon {
-  font-size: 10px;
-  y-align: center;
+    font-size: 10px;
+    y-align: center;
 }
 
 .github-tray-header-followers {
-  background-color: rgba(139, 148, 158, 0.08);
-  border: 1px solid rgba(139, 148, 158, 0.15);
+    background-color: rgba(139, 148, 158, 0.08);
+    border: 1px solid rgba(139, 148, 158, 0.15);
 }
 
 .github-tray-header-followers-text {
-  font-size: 11px;
-  font-weight: 600;
-  color: #b1bac4;
-  y-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #b1bac4;
+    y-align: center;
 }
 
 .github-tray-header-repos {
-  background-color: rgba(139, 148, 158, 0.08);
-  border: 1px solid rgba(139, 148, 158, 0.15);
+    background-color: rgba(139, 148, 158, 0.08);
+    border: 1px solid rgba(139, 148, 158, 0.15);
 }
 
 .github-tray-header-repos-text {
-  font-size: 11px;
-  font-weight: 600;
-  color: #b1bac4;
-  y-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #b1bac4;
+    y-align: center;
 }
 
 .github-tray-header-stars {
-  background-color: rgba(255, 215, 0, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+    background-color: rgba(255, 215, 0, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .github-tray-header-stars:hover {
-  background-color: rgba(255, 215, 0, 0.15);
-  border: 1px solid rgba(255, 215, 0, 0.35);
+    background-color: rgba(255, 215, 0, 0.15);
+    border: 1px solid rgba(255, 215, 0, 0.35);
 }
 
 .github-tray-header-stars-text {
-  font-size: 11px;
-  font-weight: 600;
-  color: #e3b341;
-  y-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #e3b341;
+    y-align: center;
 }
 
 /* ── Repo list item (PopupBaseMenuItem wrapper) ─────────────── */
 
 .github-tray-repo-item {
-  padding: 0;
-  margin: 0 4px;
+    padding: 0;
+    margin: 0 4px;
 }
 
 .github-tray-repo-item:hover {
-  background-color: transparent;
+    background-color: transparent;
 }
 
 /* ── Repo card ──────────────────────────────────────────────── */
 
 .github-tray-repo-box {
-  padding: 8px 10px;
-  border-radius: 8px;
-  background-color: rgba(13, 17, 23, 0.6);
-  border: 1px solid rgba(48, 54, 61, 0.6);
-  margin: 2px 4px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: rgba(13, 17, 23, 0.6);
+    border: 1px solid rgba(48, 54, 61, 0.6);
+    margin: 2px 4px;
 }
 
 .github-tray-repo-item:hover .github-tray-repo-box {
-  background-color: rgba(22, 27, 34, 0.9);
-  border: 1px solid rgba(88, 166, 255, 0.4);
-  box-shadow: 0 2px 12px rgba(88, 166, 255, 0.1);
+    background-color: rgba(22, 27, 34, 0.9);
+    border: 1px solid rgba(88, 166, 255, 0.4);
+    box-shadow: 0 2px 12px rgba(88, 166, 255, 0.1);
 }
 
 /* ── Repo card (local project) ──────────────────────────────── */
 
 .github-tray-repo-box-local {
-  padding: 8px 10px;
-  border-radius: 8px;
-  background-color: rgba(13, 17, 23, 0.6);
-  border: 1px solid rgba(35, 134, 54, 0.5);
-  margin: 2px 4px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: rgba(13, 17, 23, 0.6);
+    border: 1px solid rgba(35, 134, 54, 0.5);
+    margin: 2px 4px;
 }
 
 .github-tray-repo-item:hover .github-tray-repo-box-local {
-  background-color: rgba(22, 27, 34, 0.9);
-  border: 1px solid rgba(46, 160, 67, 0.6);
-  box-shadow: 0 2px 12px rgba(46, 160, 67, 0.15);
+    background-color: rgba(22, 27, 34, 0.9);
+    border: 1px solid rgba(46, 160, 67, 0.6);
+    box-shadow: 0 2px 12px rgba(46, 160, 67, 0.15);
 }
 
 /* ── Repo name ──────────────────────────────────────────────── */
@@ -188,110 +188,110 @@
 /* ── Top row (name + language) ──────────────────────────────── */
 
 .github-tray-top-row {
-  spacing: 6px;
+    spacing: 6px;
 }
 
 .github-tray-repo-name {
-  font-weight: 700;
-  font-size: 11.5px;
-  color: #58a6ff;
-  background-color: transparent;
-  border: none;
-  padding: 0;
-  border-radius: 4px;
-  -st-natural-width: 0;
+    font-weight: 700;
+    font-size: 11.5px;
+    color: #58a6ff;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    border-radius: 4px;
+    -st-natural-width: 0;
 }
 
 .github-tray-repo-name > StLabel {
-  -st-text-align: left;
+    -st-text-align: left;
 }
 
 .github-tray-repo-name:hover {
-  color: #79c0ff;
-  background-color: rgba(88, 166, 255, 0.1);
+    color: #79c0ff;
+    background-color: rgba(88, 166, 255, 0.1);
 }
 
 /* ── Language pill ──────────────────────────────────────────── */
 
 .github-tray-repo-lang-box {
-  padding: 2px 8px;
-  background-color: rgba(110, 118, 129, 0.08);
-  border-radius: 12px;
-  border: 1px solid rgba(110, 118, 129, 0.15);
+    padding: 2px 8px;
+    background-color: rgba(110, 118, 129, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(110, 118, 129, 0.15);
 }
 
 .github-tray-repo-lang-dot {
-  font-size: 8px;
+    font-size: 8px;
 }
 
 .github-tray-repo-lang-text {
-  font-size: 9px;
-  font-weight: 500;
-  color: #b1bac4;
+    font-size: 9px;
+    font-weight: 500;
+    color: #b1bac4;
 }
 
 /* ── Fork links row ─────────────────────────────────────────── */
 
 .github-tray-links-row {
-  margin-top: 3px;
+    margin-top: 3px;
 }
 
 .github-tray-link-btn {
-  padding: 2px 8px;
-  font-size: 9px;
-  font-weight: 500;
-  background-color: rgba(248, 81, 73, 0.08);
-  border-radius: 6px;
-  color: #f85149;
-  border: 1px solid rgba(248, 81, 73, 0.15);
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 500;
+    background-color: rgba(248, 81, 73, 0.08);
+    border-radius: 6px;
+    color: #f85149;
+    border: 1px solid rgba(248, 81, 73, 0.15);
 }
 
 .github-tray-link-btn-blue {
-  padding: 2px 8px;
-  font-size: 9px;
-  font-weight: 500;
-  background-color: rgba(88, 166, 255, 0.08);
-  border-radius: 6px;
-  color: #58a6ff;
-  border: 1px solid rgba(88, 166, 255, 0.15);
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 500;
+    background-color: rgba(88, 166, 255, 0.08);
+    border-radius: 6px;
+    color: #58a6ff;
+    border: 1px solid rgba(88, 166, 255, 0.15);
 }
 
 .github-tray-link-btn-blue:hover {
-  background-color: rgba(88, 166, 255, 0.15);
-  border: 1px solid rgba(88, 166, 255, 0.3);
+    background-color: rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.3);
 }
 
 /* ── Stats row ──────────────────────────────────────────────── */
 
 .github-tray-stats-row {
-  margin-top: 4px;
-  spacing: 4px;
+    margin-top: 4px;
+    spacing: 4px;
 }
 
 .github-tray-stat {
-  margin-right: 2px;
-  spacing: 2px;
+    margin-right: 2px;
+    spacing: 2px;
 }
 
 .github-tray-stat-icon {
-  font-size: 10px;
+    font-size: 10px;
 }
 
 .github-tray-stat-value {
-  font-size: 10px;
-  font-weight: 500;
-  color: #b1bac4;
+    font-size: 10px;
+    font-weight: 500;
+    color: #b1bac4;
 }
 
 .github-tray-issues-value {
-  color: #f85149;
+    color: #f85149;
 }
 
 .github-tray-updated {
-  font-size: 9px;
-  color: #6e7681;
-  font-weight: 400;
-  font-style: italic;
+    font-size: 9px;
+    color: #6e7681;
+    font-weight: 400;
+    font-style: italic;
 }
 
 /* ── Stats buttons (stars, forks, issues) ───────────────────── */
@@ -299,112 +299,112 @@
 .github-tray-stars-btn,
 .github-tray-forks-btn,
 .github-tray-issues-btn {
-  padding: 0;
-  background-color: transparent;
-  border-radius: 6px;
-  border: 1px solid transparent;
+    padding: 0;
+    background-color: transparent;
+    border-radius: 6px;
+    border: 1px solid transparent;
 }
 
 .github-tray-stars-btn:hover {
-  background-color: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+    background-color: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.25);
 }
 
 .github-tray-forks-btn:hover {
-  background-color: rgba(177, 186, 196, 0.1);
-  border: 1px solid rgba(177, 186, 196, 0.25);
+    background-color: rgba(177, 186, 196, 0.1);
+    border: 1px solid rgba(177, 186, 196, 0.25);
 }
 
 .github-tray-issues-btn:hover {
-  background-color: rgba(248, 81, 73, 0.1);
-  border: 1px solid rgba(248, 81, 73, 0.25);
+    background-color: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.25);
 }
 
 /* ── Folder button (local project opener) ───────────────────── */
 
 .github-tray-folder-icon {
-  color: #238636;
-  margin-left: 4px;
+    color: #238636;
+    margin-left: 4px;
 }
 
 .github-tray-folder-btn {
-  padding: 8px;
-  background-color: rgba(35, 134, 54, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(35, 134, 54, 0.3);
-  margin-left: 6px;
+    padding: 8px;
+    background-color: rgba(35, 134, 54, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(35, 134, 54, 0.3);
+    margin-left: 6px;
 }
 
 .github-tray-folder-btn:hover {
-  background-color: rgba(35, 134, 54, 0.25);
-  border: 1px solid rgba(46, 160, 67, 0.6);
-  box-shadow: 0 0 8px rgba(46, 160, 67, 0.2);
+    background-color: rgba(35, 134, 54, 0.25);
+    border: 1px solid rgba(46, 160, 67, 0.6);
+    box-shadow: 0 0 8px rgba(46, 160, 67, 0.2);
 }
 
 /* ── Description ────────────────────────────────────────────── */
 
 .github-tray-description {
-  font-size: 9px;
-  color: #7d8590;
-  margin-top: 3px;
-  font-weight: 400;
+    font-size: 9px;
+    color: #7d8590;
+    margin-top: 3px;
+    font-weight: 400;
 }
 
 /* ── Bottom bar ─────────────────────────────────────────────── */
 
 .github-tray-bottom-box {
-  padding: 6px 8px;
-  margin: 0 4px;
+    padding: 6px 8px;
+    margin: 0 4px;
 }
 
 /* ── Buttons ────────────────────────────────────────────────── */
 
 .github-tray-btn-primary {
-  min-width: 90px;
-  padding: 6px 16px;
-  background-color: #238636;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 11px;
-  color: #ffffff;
-  border: 1px solid rgba(46, 160, 67, 0.4);
+    min-width: 90px;
+    padding: 6px 16px;
+    background-color: #238636;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 11px;
+    color: #ffffff;
+    border: 1px solid rgba(46, 160, 67, 0.4);
 }
 
 .github-tray-btn-primary:hover {
-  background-color: #2ea043;
-  border: 1px solid rgba(46, 160, 67, 0.6);
-  box-shadow: 0 2px 8px rgba(46, 160, 67, 0.25);
+    background-color: #2ea043;
+    border: 1px solid rgba(46, 160, 67, 0.6);
+    box-shadow: 0 2px 8px rgba(46, 160, 67, 0.25);
 }
 
 .github-tray-btn-secondary {
-  min-width: 90px;
-  padding: 6px 16px;
-  background-color: rgba(33, 38, 45, 0.8);
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 11px;
-  color: #c9d1d9;
-  border: 1px solid rgba(240, 246, 252, 0.1);
+    min-width: 90px;
+    padding: 6px 16px;
+    background-color: rgba(33, 38, 45, 0.8);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 11px;
+    color: #c9d1d9;
+    border: 1px solid rgba(240, 246, 252, 0.1);
 }
 
 .github-tray-btn-secondary:hover {
-  background-color: #30363d;
-  border: 1px solid rgba(240, 246, 252, 0.2);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background-color: #30363d;
+    border: 1px solid rgba(240, 246, 252, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* ── Separator styling ──────────────────────────────────────── */
 
 .github-tray-separator {
-  margin: 2px 12px;
-  background-color: rgba(48, 54, 61, 0.4);
+    margin: 2px 12px;
+    background-color: rgba(48, 54, 61, 0.4);
 }
 
 /* ── Loading / empty message ────────────────────────────────── */
 
 .github-tray-message {
-  color: #8b949e;
-  font-size: 11px;
-  font-weight: 400;
-  padding: 16px;
+    color: #8b949e;
+    font-size: 11px;
+    font-weight: 400;
+    padding: 16px;
 }

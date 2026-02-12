@@ -1,19 +1,83 @@
 import Gtk from "gi://Gtk";
 import Adw from "gi://Adw";
+import Gio from "gi://Gio";
+import Gdk from "gi://Gdk";
 import {
   ExtensionPreferences,
   gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
 export default class GitHubTrayPreferences extends ExtensionPreferences {
+  constructor(metadata) {
+    super(metadata);
+    let iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
+    let UIFolderPath = `${this.path}/ui`;
+    iconTheme.add_search_path(`${UIFolderPath}/icons`);
+  }
+
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
+
+    // Add header bar with support menu
+    this._addHeaderBar(window);
 
     // --- Main page ---
     const page = new Adw.PreferencesPage({
       title: _("GitHub Tray"),
       icon_name: "folder-remote-symbolic",
     });
+
+    // --- Welcome group ---
+    const welcomeGroup = new Adw.PreferencesGroup({
+      title: _("Welcome"),
+    });
+
+    const welcomeRow = new Adw.ActionRow({
+      title: _("Thank you for using GitHub Tray!"),
+      subtitle: _(
+        "Join our Discord community or leave a star on GitHub to support the project",
+      ),
+    });
+
+    // Discord button with custom icon and Discord purple color
+    const discordIconPath = `${this.path}/icons/discord.svg`;
+    const discordButton = new Gtk.Button({
+      icon_name: "discord-symbolic",
+      valign: Gtk.Align.CENTER,
+      tooltip_text: _("Join Discord"),
+      css_classes: ["flat"],
+    });
+
+    // Load Discord button styles from stylesheet.css
+    const cssProvider = new Gtk.CssProvider();
+    cssProvider.load_from_path(`${this.path}/stylesheet.css`);
+    discordButton
+      .get_style_context()
+      .add_provider(cssProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    discordButton.connect("clicked", () => {
+      Gtk.show_uri(window, "https://discord.gg/YrZPHAwMSG", 0);
+    });
+    welcomeRow.add_suffix(discordButton);
+
+    // GitHub star button
+    const starButton = new Gtk.Button({
+      icon_name: "github-symbolic",
+      valign: Gtk.Align.CENTER,
+      tooltip_text: _("Star on GitHub"),
+      css_classes: ["flat"],
+    });
+    starButton.connect("clicked", () => {
+      Gtk.show_uri(
+        window,
+        "https://github.com/debba/github-tray-gnome-extension",
+        0,
+      );
+    });
+    welcomeRow.add_suffix(starButton);
+
+    welcomeGroup.add(welcomeRow);
+    page.add(welcomeGroup);
 
     // --- Authentication group ---
     const authGroup = new Adw.PreferencesGroup({
@@ -256,57 +320,62 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
   }
 
   _showAddMappingDialog(parent, settings, group) {
-    const dialog = new Gtk.Dialog({
+    // Create a simple window instead of deprecated Gtk.Dialog
+    const dialog = new Adw.Window({
       title: _("Add Repository Mapping"),
       transient_for: parent,
       modal: true,
+      default_width: 400,
+      default_height: 300,
     });
 
-    const contentArea = dialog.get_content_area();
-    contentArea.set_spacing(12);
-    contentArea.set_margin_top(12);
-    contentArea.set_margin_bottom(12);
-    contentArea.set_margin_start(12);
-    contentArea.set_margin_end(12);
+    // Create header bar
+    const headerBar = new Adw.HeaderBar();
+
+    const cancelButton = new Gtk.Button({
+      label: _("Cancel"),
+    });
+    cancelButton.connect("clicked", () => {
+      dialog.close();
+    });
+    headerBar.pack_start(cancelButton);
+
+    const addButton = new Gtk.Button({
+      label: _("Add"),
+      css_classes: ["suggested-action"],
+    });
+    headerBar.pack_end(addButton);
+
+    // Create content
+    const toolbarView = new Adw.ToolbarView();
+    toolbarView.add_top_bar(headerBar);
+
+    const contentBox = new Gtk.Box({
+      orientation: Gtk.Orientation.VERTICAL,
+      spacing: 12,
+      margin_top: 24,
+      margin_bottom: 24,
+      margin_start: 24,
+      margin_end: 24,
+    });
 
     // Repository name input
-    const repoBox = new Gtk.Box({
-      orientation: Gtk.Orientation.VERTICAL,
-      spacing: 6,
+    const repoEntry = new Adw.EntryRow({
+      title: _("Repository (owner/name)"),
     });
-    const repoLabel = new Gtk.Label({
-      label: _("Repository (owner/name):"),
-      xalign: 0,
-    });
-    const repoEntry = new Gtk.Entry({
-      placeholder_text: "username/repository",
-    });
-    repoBox.append(repoLabel);
-    repoBox.append(repoEntry);
-    contentArea.append(repoBox);
+    repoEntry.set_text("");
+    contentBox.append(repoEntry);
 
-    // Local path input
-    const pathBox = new Gtk.Box({
-      orientation: Gtk.Orientation.VERTICAL,
-      spacing: 6,
+    // Local path input with browse button
+    const pathEntry = new Adw.EntryRow({
+      title: _("Local Path"),
     });
-    const pathLabel = new Gtk.Label({
-      label: _("Local Path:"),
-      xalign: 0,
-    });
-    const pathEntry = new Gtk.Entry({
-      placeholder_text: "/home/user/projects/repository",
-    });
-
-    // Browse button
-    const browseBox = new Gtk.Box({
-      orientation: Gtk.Orientation.HORIZONTAL,
-      spacing: 6,
-    });
-    browseBox.append(pathEntry);
+    pathEntry.set_text("");
 
     const browseButton = new Gtk.Button({
-      label: _("Browse..."),
+      icon_name: "folder-open-symbolic",
+      valign: Gtk.Align.CENTER,
+      tooltip_text: _("Browse..."),
     });
     browseButton.connect("clicked", () => {
       const fileChooser = new Gtk.FileChooserDialog({
@@ -318,40 +387,36 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
       fileChooser.add_button(_("Cancel"), Gtk.ResponseType.CANCEL);
       fileChooser.add_button(_("Select"), Gtk.ResponseType.ACCEPT);
 
-      fileChooser.connect("response", (dialog, response) => {
+      fileChooser.connect("response", (chooser, response) => {
         if (response === Gtk.ResponseType.ACCEPT) {
-          const file = fileChooser.get_file();
+          const file = chooser.get_file();
           if (file) {
             pathEntry.set_text(file.get_path());
           }
         }
-        fileChooser.close();
+        chooser.close();
       });
 
       fileChooser.show();
     });
-    browseBox.append(browseButton);
+    pathEntry.add_suffix(browseButton);
+    contentBox.append(pathEntry);
 
-    pathBox.append(pathLabel);
-    pathBox.append(browseBox);
-    contentArea.append(pathBox);
+    toolbarView.set_content(contentBox);
+    dialog.set_content(toolbarView);
 
-    dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL);
-    dialog.add_button(_("Add"), Gtk.ResponseType.OK);
+    // Add button handler
+    addButton.connect("clicked", () => {
+      const repoName = repoEntry.get_text().trim();
+      const path = pathEntry.get_text().trim();
 
-    dialog.connect("response", (dialog, response) => {
-      if (response === Gtk.ResponseType.OK) {
-        const repoName = repoEntry.get_text().trim();
-        const path = pathEntry.get_text().trim();
-
-        if (repoName && path) {
-          this._addMapping(settings, repoName, path, group);
-        }
+      if (repoName && path) {
+        this._addMapping(settings, repoName, path, group);
+        dialog.close();
       }
-      dialog.close();
     });
 
-    dialog.show();
+    dialog.present();
   }
 
   _addMapping(settings, repoName, path, group) {
@@ -374,7 +439,64 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
       settings.set_string("local-projects", JSON.stringify(localProjects));
       this._updateMappingsList(group, settings);
     } catch (e) {
-      log(`Error removing mapping: ${e}`);
+      console.log(`Error removing mapping: ${e}`);
     }
+  }
+
+  find(n, name) {
+    if (n.get_name() == name) {
+      return n;
+    }
+    let c = n.get_first_child();
+    while (c) {
+      let cn = this.find(c, name);
+      if (cn) {
+        return cn;
+      }
+      c = c.get_next_sibling();
+    }
+    return null;
+  }
+
+  _addHeaderBar(window) {
+    // Load menu UI
+    const builder = new Gtk.Builder();
+    builder.add_from_file(`${this.path}/ui/menu.ui`);
+
+    // Find the AdwHeaderBar in the window
+    let headerbar = this.find(window, "AdwHeaderBar");
+    if (!headerbar) {
+      console.log("Could not find AdwHeaderBar");
+      return;
+    }
+    headerbar.pack_start(builder.get_object("info_menu"));
+
+    // Setup menu actions
+    const actionGroup = new Gio.SimpleActionGroup();
+    window.insert_action_group("prefs", actionGroup);
+
+    // A list of actions with their associated links
+    const actions = [
+      {
+        name: "open-project",
+        link: "https://github.com/debba/github-tray-gnome-extension",
+      },
+      {
+        name: "open-issues",
+        link: "https://github.com/debba/github-tray-gnome-extension/issues",
+      },
+      {
+        name: "open-discord",
+        link: "https://discord.gg/YrZPHAwMSG",
+      },
+    ];
+
+    actions.forEach((action) => {
+      let act = new Gio.SimpleAction({ name: action.name });
+      act.connect("activate", (_) =>
+        Gtk.show_uri(window, action.link, Gdk.CURRENT_TIME),
+      );
+      actionGroup.add_action(act);
+    });
   }
 }

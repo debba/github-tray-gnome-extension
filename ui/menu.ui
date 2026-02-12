@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="github-tray@debba.github.com">
+  <menu id="info_menu_model">
+    <section>
+      <item>
+        <attribute name="label">Project Page</attribute>
+        <attribute name="action">prefs.open-project</attribute>
+      </item>
+      <item>
+        <attribute name="label">Report a Bug</attribute>
+        <attribute name="action">prefs.open-issues</attribute>
+      </item>
+      <item>
+        <attribute name="label">Join Discord</attribute>
+        <attribute name="action">prefs.open-discord</attribute>
+      </item>
+    </section>
+  </menu>
+  <object class="GtkMenuButton" id="info_menu">
+    <property name="menu-model">info_menu_model</property>
+    <property name="icon-name">heart-filled-symbolic</property>
+    <property name="tooltip-text">Support &amp; Help</property>
+  </object>
+</interface>

@@ -16,7 +16,7 @@ translations:
 
 install: build
 	mkdir -p $(INSTALL_DIR)
-	cp -r extension.js githubApi.js ui.js utils.js prefs.js metadata.json stylesheet.css $(SCHEMAS_DIR) icons $(INSTALL_DIR)
+	cp -r extension.js githubApi.js ui.js utils.js prefs.js metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(INSTALL_DIR)
 	@if [ -d $(LOCALE_DIR) ]; then cp -r $(LOCALE_DIR) $(INSTALL_DIR); fi
 	@echo "Extension installed in $(INSTALL_DIR)"
 	@echo "Restart GNOME Shell to see changes."
@@ -26,7 +26,7 @@ uninstall:
 
 pack: build
 	@rm -f $(UUID).zip
-	zip -r $(UUID).zip extension.js githubApi.js ui.js utils.js prefs.js metadata.json stylesheet.css $(SCHEMAS_DIR) icons $(LOCALE_DIR)
+	zip -r $(UUID).zip extension.js githubApi.js ui.js utils.js prefs.js metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(LOCALE_DIR)
 	@echo "Package created: $(UUID).zip"
 
 clean:

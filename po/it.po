@@ -34,6 +34,21 @@ msgstr "Errore nel caricamento repository"
 msgid "GitHub Tray"
 msgstr "GitHub Tray"
 
+msgid "Welcome"
+msgstr "Benvenuto"
+
+msgid "Thank you for using GitHub Tray!"
+msgstr "Grazie per aver usato GitHub Tray!"
+
+msgid "Join our Discord community or leave a star on GitHub to support the project"
+msgstr "Unisciti alla nostra community Discord o lascia una stella su GitHub per supportare il progetto"
+
+msgid "Join Discord"
+msgstr "Unisciti a Discord"
+
+msgid "Star on GitHub"
+msgstr "Stella su GitHub"
+
 msgid "Failed to fetch repositories: %s"
 msgstr "Impossibile caricare i repository: %s"
 
@@ -45,6 +60,9 @@ msgstr "Nuove Issue Aperte"
 
 msgid "New Forks Created"
 msgstr "Nuovi Fork Creati"
+
+msgid "New Followers"
+msgstr "Nuovi Follower"
 
 msgid "Waiting for network connection..."
 msgstr "In attesa della connessione di rete..."
@@ -176,8 +194,14 @@ msgstr "Aggiungi Mappatura Repository"
 msgid "Repository (owner/name):"
 msgstr "Repository (proprietario/nome):"
 
+msgid "Repository (owner/name)"
+msgstr "Repository (proprietario/nome)"
+
 msgid "Local Path:"
 msgstr "Percorso Locale:"
+
+msgid "Local Path"
+msgstr "Percorso Locale"
 
 msgid "Browse..."
 msgstr "Sfoglia..."

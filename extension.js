@@ -40,7 +40,7 @@ export default class GitHubTrayExtension extends Extension {
     this._indicator = new PanelMenu.Button(0.0, "GitHub Tray");
 
     // GitHub icon
-    const iconPath = `${this.path}/icons/github-symbolic.svg`;
+    const iconPath = `${this.path}/ui/icons/github-symbolic.svg`;
     const gicon = Gio.Icon.new_for_string(iconPath);
     this._icon = new St.Icon({
       gicon: gicon,
@@ -143,13 +143,17 @@ export default class GitHubTrayExtension extends Extension {
         GLib.source_remove(this._menuReopenTimeout);
         this._menuReopenTimeout = null;
       }
-      this._menuReopenTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 400, () => {
-        this._menuReopenTimeout = null;
-        if (this._indicator) {
-          this._indicator.menu.open();
-        }
-        return GLib.SOURCE_REMOVE;
-      });
+      this._menuReopenTimeout = GLib.timeout_add(
+        GLib.PRIORITY_DEFAULT,
+        400,
+        () => {
+          this._menuReopenTimeout = null;
+          if (this._indicator) {
+            this._indicator.menu.open();
+          }
+          return GLib.SOURCE_REMOVE;
+        },
+      );
     } else if (!this._indicator.menu.isOpen) {
       this._ui.updateMenu(repos, username, userInfo);
     } else {
@@ -258,7 +262,8 @@ export default class GitHubTrayExtension extends Extension {
 
       // Add mock new followers for testing
       const newFollowers = [...oldFollowers];
-      const numNewFollowers = Math.random() > 0.5 ? 1 : Math.floor(Math.random() * 3) + 2;
+      const numNewFollowers =
+        Math.random() > 0.5 ? 1 : Math.floor(Math.random() * 3) + 2;
       for (let i = 0; i < numNewFollowers; i++) {
         newFollowers.push({
           id: Date.now() + i,
@@ -292,24 +297,34 @@ export default class GitHubTrayExtension extends Extension {
         GLib.source_remove(this._menuCloseTimeout);
         this._menuCloseTimeout = null;
       }
-      this._menuCloseTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
-        this._menuCloseTimeout = null;
-        if (!this._indicator) return GLib.SOURCE_REMOVE;
+      this._menuCloseTimeout = GLib.timeout_add(
+        GLib.PRIORITY_DEFAULT,
+        300,
+        () => {
+          this._menuCloseTimeout = null;
+          if (!this._indicator) return GLib.SOURCE_REMOVE;
 
-        if (this._pendingUpdate) {
-          const { repos, username, userInfo } = this._pendingUpdate;
-          this._pendingUpdate = null;
-          this._ui.updateMenu(repos, username, userInfo);
-        }
+          if (this._pendingUpdate) {
+            const { repos, username, userInfo } = this._pendingUpdate;
+            this._pendingUpdate = null;
+            this._ui.updateMenu(repos, username, userInfo);
+          }
 
-        if (this._pendingDetectChanges) {
-          const { newRepos, oldRepos, newFollowers, oldFollowers } = this._pendingDetectChanges;
-          this._pendingDetectChanges = null;
-          this._detectAndNotify(newRepos, oldRepos, newFollowers, oldFollowers);
-        }
+          if (this._pendingDetectChanges) {
+            const { newRepos, oldRepos, newFollowers, oldFollowers } =
+              this._pendingDetectChanges;
+            this._pendingDetectChanges = null;
+            this._detectAndNotify(
+              newRepos,
+              oldRepos,
+              newFollowers,
+              oldFollowers,
+            );
+          }
 
-        return GLib.SOURCE_REMOVE;
-      });
+          return GLib.SOURCE_REMOVE;
+        },
+      );
     }
   }
 
