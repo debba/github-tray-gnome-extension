@@ -105,37 +105,12 @@ journalctl -f -o cat /usr/bin/gnome-shell
 
 ## Development
 
-For a complete development guide, see [dev/DEVELOPMENT.md](dev/DEVELOPMENT.md).
-
-Quick commands:
-
-```bash
-./dev/install-dev.sh       # Install in development mode
-./dev/test-nested.sh       # Test in nested GNOME Shell (Wayland-friendly)
-./dev/reload-extension.sh  # Quick reload after changes
-./dev/dev-logs.sh          # Watch logs filtered for this extension
-```
-
-Or use the Makefile:
+Use the Makefile:
 
 ```bash
 make install
 # Reload shell (Alt+F2 → r on X11, or logout on Wayland)
 ```
-
----
-
-## In italiano
-
-Estensione per GNOME Shell che mette i tuoi repo GitHub nella barra in alto. Controlli stelle, issue e attività recente senza aprire il browser.
-
-**Installazione**: `make install` e riavvia GNOME Shell.
-
-**Configurazione**: clicca l'icona → Impostazioni (Settings) e inserisci username e token.
-
-Il token lo crei su [GitHub Settings](https://github.com/settings/tokens) con scope `repo` o `public_repo`.
-
-**Progetti locali**: puoi mappare i repo a cartelle locali e aprirli nell'editor con un click. Vai nelle impostazioni per configurare tutto.
 
 ## License
 
