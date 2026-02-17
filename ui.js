@@ -1,5 +1,6 @@
 import St from "gi://St";
 import Gio from "gi://Gio";
+import GLib from "gi://GLib";
 import Clutter from "gi://Clutter";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import { formatNumber, relativeTime } from "./utils.js";
@@ -63,6 +64,8 @@ export class GitHubTrayUI {
     this._cachedNotifications = [];
     this._onFetchIssues = null;
     this._onMarkNotificationRead = null;
+    this._onRerunWorkflow = null;
+    this._onFetchWorkflowRuns = null;
   }
 
   buildMenu(
@@ -71,9 +74,13 @@ export class GitHubTrayUI {
     onDebug,
     onFetchIssues = null,
     onMarkNotificationRead = null,
+    onRerunWorkflow = null,
+    onFetchWorkflowRuns = null,
   ) {
     this._onFetchIssues = onFetchIssues;
     this._onMarkNotificationRead = onMarkNotificationRead;
+    this._onRerunWorkflow = onRerunWorkflow;
+    this._onFetchWorkflowRuns = onFetchWorkflowRuns;
 
     // Apply font size class
     this._applyFontSize();
@@ -188,6 +195,7 @@ export class GitHubTrayUI {
   }
 
   updateMenu(repos, username, userInfo = null, notifications = []) {
+    console.log(`[GitHubTray UI] updateMenu called - repos: ${repos.length}, notifications: ${notifications.length}`);
     try {
       if (!this._indicator) return;
 
@@ -351,11 +359,28 @@ export class GitHubTrayUI {
         unreadNotifications.length > 0;
       const showRepos = repos.length > 0;
 
-      if (showNotifications && showRepos) {
-        this._buildNotificationsAccordion(unreadNotifications);
-        this._buildReposAccordion(repos);
-      } else {
+      console.log(`[GitHubTray UI] Section visibility - Notifications: ${showNotifications} (setting: ${this._settings.get_boolean("show-notifications")}, count: ${unreadNotifications.length})`);
+      console.log(`[GitHubTray UI] Section visibility - Repos: ${showRepos} (count: ${repos.length})`);
+
+      const sectionsCount = [showNotifications, showRepos].filter(Boolean).length;
+      console.log(`[GitHubTray UI] Total sections to show: ${sectionsCount}`);
+
+      if (sectionsCount > 1) {
+        // Use accordions when multiple sections are present
+        console.log("[GitHubTray UI] Using accordion layout (multiple sections)");
         if (showNotifications) {
+          console.log("[GitHubTray UI] Building notifications accordion");
+          this._buildNotificationsAccordion(unreadNotifications);
+        }
+        if (showRepos) {
+          console.log("[GitHubTray UI] Building repos accordion");
+          this._buildReposAccordion(repos);
+        }
+      } else {
+        // Show sections directly without accordions
+        console.log("[GitHubTray UI] Using direct layout (single section)");
+        if (showNotifications) {
+          console.log("[GitHubTray UI] Building notifications section");
           this._buildNotificationsSection(unreadNotifications);
         }
         if (repos.length === 0) {
@@ -579,6 +604,215 @@ export class GitHubTrayUI {
 
     this._headerSection.addMenuItem(this._notificationsAccordionContent);
     this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+  }
+
+  _createWorkflowRunItem(run) {
+    const menuItem = new PopupMenu.PopupBaseMenuItem({
+      style_class: "github-tray-workflow-item",
+      can_focus: true,
+    });
+
+    const mainBox = new St.BoxLayout({
+      vertical: true,
+      x_expand: true,
+      style_class: "github-tray-workflow-box",
+    });
+
+    const topRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+      style_class: "github-tray-workflow-top-row",
+    });
+
+    // Status icon
+    const statusIcon = this._getWorkflowStatusIcon(run);
+    const statusLabel = new St.Label({
+      text: statusIcon,
+      style_class: "github-tray-workflow-status-icon",
+    });
+    topRow.add_child(statusLabel);
+
+    // Workflow name button
+    const nameBtn = new St.Button({
+      label: run.name,
+      style_class: "button github-tray-workflow-name",
+      can_focus: true,
+      x_expand: true,
+      x_align: Clutter.ActorAlign.START,
+    });
+    const nameBtnChild = nameBtn.get_child();
+    if (nameBtnChild && nameBtnChild.clutter_text) {
+      nameBtnChild.clutter_text.set_ellipsize(3);
+    }
+    nameBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(run.html_url, null);
+      } catch (e) {
+        console.error(e, "GitHubTray:open-workflow");
+      }
+      this._indicator.menu.close();
+    });
+    topRow.add_child(nameBtn);
+
+    // Re-run button for failed/cancelled workflows
+    if (
+      run.status === "completed" &&
+      (run.conclusion === "failure" || run.conclusion === "cancelled")
+    ) {
+      const rerunBtn = new St.Button({
+        label: _("Re-run"),
+        style_class: "button github-tray-workflow-rerun-btn",
+        can_focus: true,
+      });
+      rerunBtn.connect("clicked", () => {
+        if (this._onRerunWorkflow) {
+          rerunBtn.set_label(_("Running..."));
+          rerunBtn.set_reactive(false);
+          this._onRerunWorkflow(run, (success) => {
+            if (success) {
+              rerunBtn.set_label(_("Re-run"));
+            } else {
+              rerunBtn.set_label(_("Failed"));
+              GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
+                rerunBtn.set_label(_("Re-run"));
+                rerunBtn.set_reactive(true);
+                return GLib.SOURCE_REMOVE;
+              });
+            }
+          });
+        }
+      });
+      topRow.add_child(rerunBtn);
+    }
+
+    mainBox.add_child(topRow);
+
+    // Repository and branch info
+    const infoRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      style_class: "github-tray-workflow-info-row",
+    });
+
+    const repoLabel = new St.Label({
+      text: run.repository_full_name,
+      style_class: "github-tray-workflow-repo",
+    });
+    infoRow.add_child(repoLabel);
+
+    const branchLabel = new St.Label({
+      text: ` • ${run.head_branch}`,
+      style_class: "github-tray-workflow-branch",
+    });
+    infoRow.add_child(branchLabel);
+
+    mainBox.add_child(infoRow);
+
+    // Status and timing info
+    const metaRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      style_class: "github-tray-workflow-meta-row",
+    });
+
+    const statusText = this._getWorkflowStatusText(run);
+    const statusTextLabel = new St.Label({
+      text: statusText,
+      style_class: "github-tray-workflow-status-text",
+    });
+    metaRow.add_child(statusTextLabel);
+
+    const spacer = new St.Widget({ x_expand: true });
+    metaRow.add_child(spacer);
+
+    const timeText = relativeTime(run.updated_at);
+    const timeLabel = new St.Label({
+      text: timeText,
+      style_class: "github-tray-workflow-time",
+    });
+    metaRow.add_child(timeLabel);
+
+    mainBox.add_child(metaRow);
+
+    menuItem.add_child(mainBox);
+
+    menuItem.connect("activate", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(run.html_url, null);
+      } catch (e) {
+        console.error(e, "GitHubTray:open-workflow-activate");
+      }
+      this._indicator.menu.close();
+    });
+
+    return menuItem;
+  }
+
+  _getWorkflowStatusIcon(run) {
+    if (run.status === "in_progress" || run.status === "queued") {
+      return "🟡";
+    }
+    if (run.status === "completed") {
+      switch (run.conclusion) {
+        case "success":
+          return "🟢";
+        case "failure":
+          return "🔴";
+        case "cancelled":
+          return "⚫";
+        case "skipped":
+          return "⚪";
+        default:
+          return "🔵";
+      }
+    }
+    return "🔵";
+  }
+
+  _getWorkflowStatusText(run) {
+    if (run.status === "in_progress") {
+      return _("In progress...");
+    }
+    if (run.status === "queued") {
+      return _("Queued");
+    }
+    if (run.status === "completed") {
+      const duration = this._calculateDuration(run.run_started_at, run.updated_at);
+      switch (run.conclusion) {
+        case "success":
+          return _("Success • %s").format(duration);
+        case "failure":
+          return _("Failed • %s").format(duration);
+        case "cancelled":
+          return _("Cancelled");
+        case "skipped":
+          return _("Skipped");
+        default:
+          return run.conclusion || _("Completed");
+      }
+    }
+    return run.status;
+  }
+
+  _calculateDuration(startTime, endTime) {
+    if (!startTime) return "";
+    
+    const start = GLib.DateTime.new_from_iso8601(startTime, null);
+    const end = endTime
+      ? GLib.DateTime.new_from_iso8601(endTime, null)
+      : GLib.DateTime.new_now_utc();
+
+    if (!start || !end) return "";
+
+    const diffSec = end.to_unix() - start.to_unix();
+    const minutes = Math.floor(diffSec / 60);
+    const seconds = diffSec % 60;
+
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+    return `${seconds}s`;
   }
 
   _buildReposAccordion(repos) {
@@ -958,6 +1192,26 @@ export class GitHubTrayUI {
       outerBox.add_child(descLabel);
     }
 
+    // Workflow runs button
+    const workflowBtn = new St.Button({
+      style_class: "button github-tray-workflow-btn",
+      can_focus: true,
+    });
+    const workflowIcon = new St.Icon({
+      icon_name: "system-run-symbolic",
+      icon_size: 20,
+      style: "color: #8b949e;",
+    });
+    workflowBtn.set_child(workflowIcon);
+    workflowBtn.connect("clicked", () => {
+      if (this._onFetchWorkflowRuns) {
+        this._onFetchWorkflowRuns(repo, (workflowRuns) => {
+          this.showWorkflowRunsView(repo, workflowRuns);
+        });
+      }
+    });
+    mainBox.add_child(workflowBtn);
+
     // Folder button if local path exists
     if (localPath) {
       const folderBtn = new St.Button({
@@ -1230,6 +1484,93 @@ export class GitHubTrayUI {
     });
 
     return menuItem;
+  }
+
+  showWorkflowRunsView(repo, workflowRuns) {
+    console.log(`[GitHubTray UI] showWorkflowRunsView called for ${repo.name} with ${workflowRuns ? workflowRuns.length : 0} workflow runs`);
+    
+    if (!this._indicator) return;
+
+    this._currentView = "workflow-runs";
+    this._currentRepo = repo;
+
+    this._headerSection.removeAll();
+    this._reposContainer.removeAll();
+
+    const headerItem = new PopupMenu.PopupBaseMenuItem({
+      reactive: false,
+      can_focus: false,
+    });
+    const headerBox = new St.BoxLayout({
+      vertical: true,
+      x_expand: true,
+      style_class: "github-tray-header",
+    });
+
+    const topRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    const backBtn = new St.Button({
+      label: _("← Back"),
+      style_class: "button github-tray-back-btn",
+      can_focus: true,
+    });
+    backBtn.connect("clicked", () => {
+      this.showReposView();
+    });
+    topRow.add_child(backBtn);
+
+    const spacer = new St.Widget({ x_expand: true });
+    topRow.add_child(spacer);
+
+    const openInBrowserBtn = new St.Button({
+      label: _("Open in Browser"),
+      style_class: "button github-tray-link-btn-blue",
+      can_focus: true,
+    });
+    openInBrowserBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/actions`, null);
+      } catch (e) {
+        console.error(e, "GitHubTray:open-actions-browser");
+      }
+      this._indicator.menu.close();
+    });
+    topRow.add_child(openInBrowserBtn);
+
+    headerBox.add_child(topRow);
+
+    const titleRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      style_class: "github-tray-workflow-title-row",
+    });
+    const titleLabel = new St.Label({
+      text: `${repo.name} - ${_("Workflow Runs")}`,
+      style_class: "github-tray-workflow-title",
+      x_expand: true,
+    });
+    titleRow.add_child(titleLabel);
+    headerBox.add_child(titleRow);
+
+    headerItem.add_child(headerBox);
+    this._headerSection.addMenuItem(headerItem);
+    this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+    if (!workflowRuns || workflowRuns.length === 0) {
+      console.log(`[GitHubTray UI] No workflow runs to display`);
+      this.showMessage(_("No workflow runs found"));
+      return;
+    }
+
+    console.log(`[GitHubTray UI] Creating ${workflowRuns.length} workflow run items`);
+    for (const run of workflowRuns) {
+      const item = this._createWorkflowRunItem(run);
+      this._reposContainer.addMenuItem(item);
+    }
   }
 
   showReposView() {

@@ -344,6 +344,82 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
 
     page.add(notificationTypesGroup);
 
+    // --- GitHub Actions group ---
+    const actionsGroup = new Adw.PreferencesGroup({
+      title: _("GitHub Actions"),
+      description: _("Configure workflow runs display. Click the workflow icon on any repository to view its workflow runs."),
+    });
+
+    // Max workflow runs to display
+    const maxWorkflowRunsRow = new Adw.SpinRow({
+      title: _("Max Workflow Runs"),
+      subtitle: _("Maximum number of workflow runs to display per repository"),
+      adjustment: new Gtk.Adjustment({
+        lower: 1,
+        upper: 50,
+        step_increment: 1,
+        value: settings.get_int("workflow-runs-max-display"),
+      }),
+    });
+    maxWorkflowRunsRow.connect("notify::value", () => {
+      settings.set_int("workflow-runs-max-display", maxWorkflowRunsRow.value);
+    });
+    actionsGroup.add(maxWorkflowRunsRow);
+
+    page.add(actionsGroup);
+
+    // --- Workflow Notifications group ---
+    const workflowNotificationsGroup = new Adw.PreferencesGroup({
+      title: _("Workflow Notifications"),
+      description: _("Choose which workflow events to notify about. Notifications are only sent for repositories with a configured local path."),
+    });
+
+    // Workflow started
+    const workflowStartedRow = new Adw.SwitchRow({
+      title: _("Workflow Started"),
+      subtitle: _("When a workflow run starts"),
+      active: settings.get_boolean("notify-workflow-started"),
+    });
+    workflowStartedRow.connect("notify::active", () => {
+      settings.set_boolean("notify-workflow-started", workflowStartedRow.active);
+    });
+    workflowNotificationsGroup.add(workflowStartedRow);
+
+    // Workflow success
+    const workflowSuccessRow = new Adw.SwitchRow({
+      title: _("Workflow Succeeded"),
+      subtitle: _("When a workflow run completes successfully"),
+      active: settings.get_boolean("notify-workflow-success"),
+    });
+    workflowSuccessRow.connect("notify::active", () => {
+      settings.set_boolean("notify-workflow-success", workflowSuccessRow.active);
+    });
+    workflowNotificationsGroup.add(workflowSuccessRow);
+
+    // Workflow failure
+    const workflowFailureRow = new Adw.SwitchRow({
+      title: _("Workflow Failed"),
+      subtitle: _("When a workflow run fails"),
+      active: settings.get_boolean("notify-workflow-failure"),
+    });
+    workflowFailureRow.connect("notify::active", () => {
+      settings.set_boolean("notify-workflow-failure", workflowFailureRow.active);
+    });
+    workflowNotificationsGroup.add(workflowFailureRow);
+
+    // Workflow cancelled
+    const workflowCancelledRow = new Adw.SwitchRow({
+      title: _("Workflow Cancelled"),
+      subtitle: _("When a workflow run is cancelled"),
+      active: settings.get_boolean("notify-workflow-cancelled"),
+    });
+    workflowCancelledRow.connect("notify::active", () => {
+      settings.set_boolean("notify-workflow-cancelled", workflowCancelledRow.active);
+    });
+    workflowNotificationsGroup.add(workflowCancelledRow);
+
+    page.add(workflowNotificationsGroup);
+
     // --- Local Path Mappings group ---
     const mappingsGroup = new Adw.PreferencesGroup({
       title: _("Repository Path Mappings"),

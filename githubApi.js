@@ -180,6 +180,71 @@ export class GitHubApi {
     }
   }
 
+  async fetchRepoWorkflowRuns(token, owner, repo, perPage = 10) {
+    // Fetch workflow runs for a specific repository
+    const url = `${GITHUB_API_URL}/repos/${owner}/${repo}/actions/runs?per_page=${perPage}`;
+    console.log(`[GitHubApi] Fetching workflow runs from: ${url}`);
+    
+    const message = Soup.Message.new("GET", url);
+
+    message.request_headers.append("Authorization", `Bearer ${token}`);
+    message.request_headers.append("Accept", "application/vnd.github.v3+json");
+    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+
+    const bytes = await this._httpSession.send_and_read_async(
+      message,
+      GLib.PRIORITY_DEFAULT,
+      null,
+    );
+
+    const statusCode = message.get_status();
+    console.log(`[GitHubApi] Workflow runs API response status: ${statusCode}`);
+    
+    if (statusCode !== Soup.Status.OK) {
+      const errorData = new TextDecoder().decode(bytes.get_data());
+      console.error(`[GitHubApi] API error response: ${errorData}`);
+      throw new Error(`HTTP ${statusCode}`);
+    }
+
+    const data = new TextDecoder().decode(bytes.get_data());
+    const parsed = JSON.parse(data);
+    
+    console.log(`[GitHubApi] Parsed response - total_count: ${parsed.total_count}, workflow_runs: ${parsed.workflow_runs ? parsed.workflow_runs.length : 0}`);
+    
+    // Add repository info to each run for consistency
+    if (parsed.workflow_runs) {
+      parsed.workflow_runs.forEach((run) => {
+        run.repository_full_name = `${owner}/${repo}`;
+      });
+    }
+    
+    return parsed.workflow_runs || [];
+  }
+
+  async rerunWorkflow(token, owner, repo, runId) {
+    const message = Soup.Message.new(
+      "POST",
+      `${GITHUB_API_URL}/repos/${owner}/${repo}/actions/runs/${runId}/rerun-failed-jobs`,
+    );
+
+    message.request_headers.append("Authorization", `Bearer ${token}`);
+    message.request_headers.append("Accept", "application/vnd.github.v3+json");
+    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+
+    const bytes = await this._httpSession.send_and_read_async(
+      message,
+      GLib.PRIORITY_DEFAULT,
+      null,
+    );
+
+    const statusCode = message.get_status();
+    if (statusCode !== Soup.Status.CREATED && statusCode !== Soup.Status.OK) {
+      throw new Error(`HTTP ${statusCode}`);
+    }
+
+    return true;
+  }
+
   sortRepositories(repos, settings) {
     const sortBy = settings.get_string("sort-by");
     const sortOrder = settings.get_string("sort-order");

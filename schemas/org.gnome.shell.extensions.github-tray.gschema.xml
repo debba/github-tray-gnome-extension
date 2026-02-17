@@ -91,5 +91,30 @@
       <summary>Font size</summary>
       <description>UI font size: small, medium, or large</description>
     </key>
+    <key name="workflow-runs-max-display" type="i">
+      <default>10</default>
+      <summary>Max workflow runs to display</summary>
+      <description>Maximum number of workflow runs shown per repository</description>
+    </key>
+    <key name="notify-workflow-started" type="b">
+      <default>true</default>
+      <summary>Notify on workflow start</summary>
+      <description>Show desktop notifications when a workflow starts (monitored repos only)</description>
+    </key>
+    <key name="notify-workflow-success" type="b">
+      <default>true</default>
+      <summary>Notify on workflow success</summary>
+      <description>Show desktop notifications when a workflow succeeds (monitored repos only)</description>
+    </key>
+    <key name="notify-workflow-failure" type="b">
+      <default>true</default>
+      <summary>Notify on workflow failure</summary>
+      <description>Show desktop notifications when a workflow fails (monitored repos only)</description>
+    </key>
+    <key name="notify-workflow-cancelled" type="b">
+      <default>true</default>
+      <summary>Notify on workflow cancellation</summary>
+      <description>Show desktop notifications when a workflow is cancelled (monitored repos only)</description>
+    </key>
   </schema>
 </schemalist>

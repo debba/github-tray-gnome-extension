@@ -926,3 +926,181 @@
 .github-tray-accordion-action-btn:focus {
     background-color: rgba(56, 139, 253, 0.3);
 }
+
+/* ── Workflow Runs ────────────────────────────────────────────── */
+
+.github-tray-workflow-header {
+    padding: 4px 0;
+    margin-bottom: 4px;
+}
+
+.github-tray-workflow-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #c9d1d9;
+}
+
+.github-tray-workflow-more {
+    font-size: 10px;
+    color: #6e7681;
+    font-style: italic;
+    padding: 4px 0;
+}
+
+/* ── Workflow run item ───────────────────────────────────────── */
+
+.github-tray-workflow-item {
+    padding: 0;
+    margin: 0;
+}
+
+.github-tray-workflow-item:hover {
+    background-color: transparent;
+}
+
+.github-tray-workflow-box {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background-color: rgba(13, 17, 23, 0.6);
+    border: 1px solid rgba(48, 54, 61, 0.6);
+    margin: 1px 4px;
+}
+
+.github-tray-workflow-item:hover .github-tray-workflow-box {
+    background-color: rgba(22, 27, 34, 0.9);
+    border: 1px solid rgba(139, 148, 158, 0.4);
+    box-shadow: 0 2px 12px rgba(139, 148, 158, 0.1);
+}
+
+.github-tray-workflow-top-row {
+    spacing: 6px;
+}
+
+.github-tray-workflow-status-icon {
+    font-size: 10px;
+}
+
+.github-tray-workflow-name {
+    font-weight: 600;
+    font-size: 11px;
+    color: #c9d1d9;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    border-radius: 4px;
+}
+
+.github-tray-workflow-name:hover {
+    color: #58a6ff;
+    background-color: rgba(88, 166, 255, 0.1);
+}
+
+.github-tray-workflow-rerun-btn {
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 500;
+    background-color: rgba(88, 166, 255, 0.08);
+    border-radius: 6px;
+    color: #58a6ff;
+    border: 1px solid rgba(88, 166, 255, 0.15);
+}
+
+.github-tray-workflow-rerun-btn:hover {
+    background-color: rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.3);
+}
+
+/* ── Workflow info row ───────────────────────────────────────── */
+
+.github-tray-workflow-info-row {
+    spacing: 4px;
+    margin-top: 3px;
+}
+
+.github-tray-workflow-repo {
+    font-size: 9px;
+    color: #6e7681;
+    font-weight: 500;
+}
+
+.github-tray-workflow-branch {
+    font-size: 9px;
+    color: #8b949e;
+    font-weight: 400;
+}
+
+/* ── Workflow meta row ───────────────────────────────────────── */
+
+.github-tray-workflow-meta-row {
+    spacing: 6px;
+    margin-top: 3px;
+}
+
+.github-tray-workflow-status-text {
+    font-size: 9px;
+    color: #8b949e;
+    font-weight: 400;
+}
+
+.github-tray-workflow-time {
+    font-size: 9px;
+    color: #6e7681;
+    font-weight: 400;
+    font-style: italic;
+}
+
+/* ── Workflow font size variants ─────────────────────────────── */
+
+.github-tray-font-medium .github-tray-workflow-section-title {
+    font-size: 13px;
+}
+
+.github-tray-font-medium .github-tray-workflow-more {
+    font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-workflow-status-icon {
+    font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-workflow-name {
+    font-size: 12px;
+}
+
+.github-tray-font-medium .github-tray-workflow-rerun-btn {
+    font-size: 10px;
+}
+
+.github-tray-font-medium .github-tray-workflow-repo,
+.github-tray-font-medium .github-tray-workflow-branch,
+.github-tray-font-medium .github-tray-workflow-status-text,
+.github-tray-font-medium .github-tray-workflow-time {
+    font-size: 10px;
+}
+
+.github-tray-font-large .github-tray-workflow-section-title {
+    font-size: 14px;
+}
+
+.github-tray-font-large .github-tray-workflow-more {
+    font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-workflow-status-icon {
+    font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-workflow-name {
+    font-size: 13px;
+}
+
+.github-tray-font-large .github-tray-workflow-rerun-btn {
+    font-size: 11px;
+}
+
+.github-tray-font-large .github-tray-workflow-repo,
+.github-tray-font-large .github-tray-workflow-branch,
+.github-tray-font-large .github-tray-workflow-status-text,
+.github-tray-font-large .github-tray-workflow-time {
+    font-size: 11px;
+}

@@ -15,6 +15,11 @@ A GNOME Shell extension that puts your GitHub repos right in your top bar. Check
 - Click a repo to open it on GitHub, or open it locally if you've set a path
 - Links to Issues and Fork parent directly from the menu
 - Shows your avatar and total stars in the header
+- **GitHub Actions integration** - Monitor workflow runs with real-time status updates
+  - See workflow runs status (success, failure, in progress, cancelled)
+  - Get desktop notifications when workflows start, complete, fail, or are cancelled
+  - Re-run failed workflows directly from the menu
+  - Click any workflow to open it on GitHub
 - Get notifications when repos gain stars, issues, or forks
 - Auto-refresh every 5 minutes
 - Sort by stars, name, last updated, or last pushed
@@ -58,8 +63,10 @@ Go to [github.com/settings/tokens](https://github.com/settings/tokens) and creat
 
 Give it these scopes:
 
-- `repo` (if you want private repos)
-- `public_repo` (if you only care about public repos)
+- `repo` (for private repos and GitHub Actions access)
+- Or just `public_repo` (for public repos only)
+
+**Note**: The `repo` scope includes access to GitHub Actions. There is no separate `actions:read` scope needed.
 
 Copy the token and paste it in Settings.
 
@@ -73,6 +80,19 @@ Want to open repos directly in your editor?
 4. Now clicking that repo opens it in your editor instead of the browser
 
 Or manage all mappings in Settings → Repository Path Mappings.
+
+### GitHub Actions
+
+The extension automatically monitors workflow runs from your repositories:
+
+- **View workflow runs**: See recent workflow runs with their status (success, failure, in progress)
+- **Re-run failures**: Click "Re-run" on failed workflows to trigger them again
+- **Desktop notifications**: Get notified when workflows start, complete, fail, or are cancelled
+- **Configure in Settings**:
+  - Enable/disable workflow runs display
+  - Set refresh interval (default: 60 seconds)
+  - Choose how many workflow runs to display
+  - Toggle notifications for each event type (start, success, failure, cancelled)
 
 ## Package it
 
