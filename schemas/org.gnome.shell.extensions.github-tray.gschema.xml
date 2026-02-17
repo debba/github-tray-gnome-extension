@@ -46,5 +46,50 @@
       <summary>Debug mode</summary>
       <description>Enable debug mode to show debug button for testing notifications</description>
     </key>
+    <key name="show-notifications" type="b">
+      <default>true</default>
+      <summary>Show GitHub notifications</summary>
+      <description>Display GitHub notifications in the menu</description>
+    </key>
+    <key name="notification-interval" type="i">
+      <default>60</default>
+      <summary>Notification refresh interval</summary>
+      <description>Interval in seconds to check for new notifications</description>
+    </key>
+    <key name="notify-review-requests" type="b">
+      <default>true</default>
+      <summary>Show review requests</summary>
+      <description>Show notifications for review requests</description>
+    </key>
+    <key name="notify-mentions" type="b">
+      <default>true</default>
+      <summary>Show mentions</summary>
+      <description>Show notifications for mentions</description>
+    </key>
+    <key name="notify-assignments" type="b">
+      <default>true</default>
+      <summary>Show assignments</summary>
+      <description>Show notifications for assignments</description>
+    </key>
+    <key name="notify-pr-comments" type="b">
+      <default>true</default>
+      <summary>Show PR comments</summary>
+      <description>Show notifications for pull request comments</description>
+    </key>
+    <key name="notify-issue-comments" type="b">
+      <default>true</default>
+      <summary>Show issue comments</summary>
+      <description>Show notifications for issue comments</description>
+    </key>
+    <key name="desktop-notifications" type="b">
+      <default>true</default>
+      <summary>Desktop notifications</summary>
+      <description>Show desktop notifications for new GitHub notifications</description>
+    </key>
+    <key name="font-size" type="s">
+      <default>'small'</default>
+      <summary>Font size</summary>
+      <description>UI font size: small, medium, or large</description>
+    </key>
   </schema>
 </schemalist>

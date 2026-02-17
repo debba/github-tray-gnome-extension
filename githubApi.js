@@ -108,6 +108,78 @@ export class GitHubApi {
     return JSON.parse(data);
   }
 
+  async fetchRepoIssues(token, owner, repo, perPage = 10) {
+    const message = Soup.Message.new(
+      "GET",
+      `${GITHUB_API_URL}/repos/${owner}/${repo}/issues?state=open&sort=updated&per_page=${perPage}`,
+    );
+
+    message.request_headers.append("Authorization", `Bearer ${token}`);
+    message.request_headers.append("Accept", "application/vnd.github.v3+json");
+    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+
+    const bytes = await this._httpSession.send_and_read_async(
+      message,
+      GLib.PRIORITY_DEFAULT,
+      null,
+    );
+
+    const statusCode = message.get_status();
+    if (statusCode !== Soup.Status.OK) {
+      throw new Error(`HTTP ${statusCode}`);
+    }
+
+    const data = new TextDecoder().decode(bytes.get_data());
+    return JSON.parse(data);
+  }
+
+  async fetchNotifications(token, perPage = 50) {
+    const message = Soup.Message.new(
+      "GET",
+      `${GITHUB_API_URL}/notifications?per_page=${perPage}`,
+    );
+
+    message.request_headers.append("Authorization", `Bearer ${token}`);
+    message.request_headers.append("Accept", "application/vnd.github.v3+json");
+    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+
+    const bytes = await this._httpSession.send_and_read_async(
+      message,
+      GLib.PRIORITY_DEFAULT,
+      null,
+    );
+
+    const statusCode = message.get_status();
+    if (statusCode !== Soup.Status.OK) {
+      throw new Error(`HTTP ${statusCode}`);
+    }
+
+    const data = new TextDecoder().decode(bytes.get_data());
+    return JSON.parse(data);
+  }
+
+  async markNotificationRead(token, threadId) {
+    const message = Soup.Message.new(
+      "PATCH",
+      `${GITHUB_API_URL}/notifications/threads/${threadId}`,
+    );
+
+    message.request_headers.append("Authorization", `Bearer ${token}`);
+    message.request_headers.append("Accept", "application/vnd.github.v3+json");
+    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+
+    const bytes = await this._httpSession.send_and_read_async(
+      message,
+      GLib.PRIORITY_DEFAULT,
+      null,
+    );
+
+    const statusCode = message.get_status();
+    if (statusCode !== Soup.Status.OK) {
+      throw new Error(`HTTP ${statusCode}`);
+    }
+  }
+
   sortRepositories(repos, settings) {
     const sortBy = settings.get_string("sort-by");
     const sortOrder = settings.get_string("sort-order");

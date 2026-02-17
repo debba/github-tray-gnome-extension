@@ -18,6 +18,8 @@ export default class GitHubTrayExtension extends Extension {
     this._httpSession = new Soup.Session();
     this._lastRepos = null;
     this._lastFollowers = null;
+    this._lastNotifications = [];
+    this._unreadCount = 0;
     this._isLoading = false;
     this._pendingUpdate = null;
     this._detectChangesTimeoutId = null;
@@ -25,6 +27,7 @@ export default class GitHubTrayExtension extends Extension {
     this._createIndicator();
     this._waitForNetworkAndLoad();
     this._setupAutoRefresh();
+    this._setupNotificationRefresh();
     this._setupSettingsListener();
   }
 
@@ -51,10 +54,20 @@ export default class GitHubTrayExtension extends Extension {
       style: "spacing: 0px; padding: 0 2px;",
     });
     iconBox.add_child(this._icon);
+
+    // Notification badge - DISABLED (breaks top menu bar)
+    // this._badge = new St.Label({
+    //   style_class: "github-tray-badge",
+    //   text: "",
+    //   visible: false,
+    // });
+    // iconBox.add_child(this._badge);
+
     this._indicator.add_child(iconBox);
 
     // Build UI
-    this._ui = new GitHubTrayUI(this._indicator, this._settings);
+    this._ui = new GitHubTrayUI(this._indicator, this._settings, this._httpSession);
+    this._ui.setBadgeWidget(null); // this._badge);
     const { debugBtn } = this._ui.buildMenu(
       () => this._loadRepositories(true),
       () => {
@@ -62,6 +75,8 @@ export default class GitHubTrayExtension extends Extension {
         this._indicator.menu.close();
       },
       () => this._onDebugClick(),
+      (repo, callback) => this._fetchRepoIssues(repo, callback),
+      (notification, callback) => this._markNotificationRead(notification, callback),
     );
     this._debugBtn = debugBtn;
 
@@ -122,7 +137,7 @@ export default class GitHubTrayExtension extends Extension {
         this._scheduleChangeDetection(repos, oldRepos, followers, oldFollowers);
       }
     } catch (error) {
-      logError(error, "GitHubTray");
+      console.error(error, "GitHubTray");
       if (this._indicator) {
         this._ui.showMessage(_("Error loading repositories"));
         Main.notifyError(
@@ -135,9 +150,28 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
+  async _fetchRepoIssues(repo, callback) {
+    const token = this._settings?.get_string("github-token");
+    if (!token) {
+      callback([]);
+      return;
+    }
+
+    try {
+      const api = new GitHubApi(this._httpSession);
+      const [owner, repoName] = repo.full_name.split("/");
+      const issues = await api.fetchRepoIssues(token, owner, repoName);
+      callback(issues);
+    } catch (error) {
+      console.error(error, "GitHubTray:fetchIssues");
+      callback([]);
+    }
+  }
+
   _handleRepoUpdate(repos, username, userInfo, wasOpen, manualRefresh) {
+    const notifications = this._lastNotifications || [];
     if (manualRefresh && wasOpen) {
-      this._pendingUpdate = { repos, username, userInfo };
+      this._pendingUpdate = { repos, username, userInfo, notifications };
       this._indicator.menu.close();
       if (this._menuReopenTimeout) {
         GLib.source_remove(this._menuReopenTimeout);
@@ -155,9 +189,9 @@ export default class GitHubTrayExtension extends Extension {
         },
       );
     } else if (!this._indicator.menu.isOpen) {
-      this._ui.updateMenu(repos, username, userInfo);
+      this._ui.updateMenu(repos, username, userInfo, notifications);
     } else {
-      this._pendingUpdate = { repos, username, userInfo };
+      this._pendingUpdate = { repos, username, userInfo, notifications };
     }
   }
 
@@ -230,7 +264,7 @@ export default class GitHubTrayExtension extends Extension {
       try {
         Main.notify(summary, body);
       } catch (e) {
-        logError(e, "GitHubTray:notify");
+        console.error(e, "GitHubTray:notify");
       }
       return GLib.SOURCE_REMOVE;
     });
@@ -305,9 +339,9 @@ export default class GitHubTrayExtension extends Extension {
           if (!this._indicator) return GLib.SOURCE_REMOVE;
 
           if (this._pendingUpdate) {
-            const { repos, username, userInfo } = this._pendingUpdate;
+            const { repos, username, userInfo, notifications } = this._pendingUpdate;
             this._pendingUpdate = null;
-            this._ui.updateMenu(repos, username, userInfo);
+            this._ui.updateMenu(repos, username, userInfo, notifications || this._lastNotifications || []);
           }
 
           if (this._pendingDetectChanges) {
@@ -338,6 +372,108 @@ export default class GitHubTrayExtension extends Extension {
         return GLib.SOURCE_CONTINUE;
       },
     );
+  }
+
+  _setupNotificationRefresh() {
+    if (!this._settings.get_boolean("show-notifications")) return;
+
+    this._loadNotifications();
+    const interval = this._settings.get_int("notification-interval");
+    this._notificationRefreshTimeout = GLib.timeout_add_seconds(
+      GLib.PRIORITY_DEFAULT,
+      interval,
+      () => {
+        if (this._settings.get_boolean("show-notifications")) {
+          this._loadNotifications();
+        }
+        return GLib.SOURCE_CONTINUE;
+      },
+    );
+  }
+
+  async _loadNotifications() {
+    const token = this._settings?.get_string("github-token");
+    if (!token) return;
+
+    try {
+      const api = new GitHubApi(this._httpSession);
+      let notifications = await api.fetchNotifications(token);
+
+      notifications = this._filterNotifications(notifications);
+      const unreadCount = notifications.filter((n) => n.unread).length;
+
+      const oldUnreadCount = this._unreadCount;
+      this._lastNotifications = notifications;
+      this._unreadCount = unreadCount;
+
+      if (this._badge) {
+        this._ui.updateBadge(unreadCount);
+      }
+
+      if (unreadCount > oldUnreadCount && this._settings.get_boolean("desktop-notifications")) {
+        const newCount = unreadCount - oldUnreadCount;
+        if (newCount > 0) {
+          this._sendNotification(
+            _("GitHub Notifications"),
+            _("%d new notification%s").format(newCount, newCount > 1 ? "s" : ""),
+          );
+        }
+      }
+
+      if (this._pendingUpdate && this._indicator && !this._indicator.menu.isOpen) {
+        const { repos, username, userInfo } = this._pendingUpdate;
+        this._pendingUpdate = null;
+        this._ui.updateMenu(repos, username, userInfo, notifications);
+      }
+    } catch (error) {
+      console.error(error, "GitHubTray:loadNotifications");
+    }
+  }
+
+  _filterNotifications(notifications) {
+    return notifications.filter((n) => {
+      const reason = n.reason;
+      const type = n.subject.type;
+
+      if (reason === "review_requested") {
+        return this._settings.get_boolean("notify-review-requests");
+      }
+      if (reason === "mention" || reason === "team_mention") {
+        return this._settings.get_boolean("notify-mentions");
+      }
+      if (reason === "assign") {
+        return this._settings.get_boolean("notify-assignments");
+      }
+      if (type === "PullRequest" || type === "PullRequestReview" || type === "PullRequestReviewComment") {
+        return this._settings.get_boolean("notify-pr-comments");
+      }
+      if (type === "Issue" || type === "IssueComment") {
+        return this._settings.get_boolean("notify-issue-comments");
+      }
+      return true;
+    });
+  }
+
+  async _markNotificationRead(notification, callback) {
+    const token = this._settings?.get_string("github-token");
+    if (!token) {
+      callback();
+      return;
+    }
+
+    try {
+      const api = new GitHubApi(this._httpSession);
+      await api.markNotificationRead(token, notification.id);
+
+      this._lastNotifications = this._lastNotifications.filter((n) => n.id !== notification.id);
+      this._unreadCount = Math.max(0, this._unreadCount - 1);
+      this._ui.updateBadge(this._unreadCount);
+
+      callback();
+    } catch (error) {
+      console.error(error, "GitHubTray:markNotificationRead");
+      callback();
+    }
   }
 
   _setupSettingsListener() {
@@ -410,6 +546,10 @@ export default class GitHubTrayExtension extends Extension {
     if (this._refreshTimeout) {
       GLib.source_remove(this._refreshTimeout);
       this._refreshTimeout = null;
+    }
+    if (this._notificationRefreshTimeout) {
+      GLib.source_remove(this._notificationRefreshTimeout);
+      this._notificationRefreshTimeout = null;
     }
     if (this._settingsDebounceId) {
       GLib.source_remove(this._settingsDebounceId);

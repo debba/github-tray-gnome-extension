@@ -42,17 +42,37 @@ const LANG_COLORS = {
 };
 
 export class GitHubTrayUI {
-  constructor(indicator, settings) {
+  constructor(indicator, settings, httpSession = null) {
     this._indicator = indicator;
     this._settings = settings;
+    this._httpSession = httpSession;
     this._reposContainer = null;
     this._headerSection = null;
+    this._notificationsSection = null;
+    this._currentView = "repos";
+    this._currentRepo = null;
+    this._cachedRepos = null;
+    this._cachedUsername = null;
+    this._cachedUserInfo = null;
+    this._cachedNotifications = [];
+    this._onFetchIssues = null;
+    this._onMarkNotificationRead = null;
   }
 
-  buildMenu(onRefresh, onOpenPrefs, onDebug) {
+  buildMenu(onRefresh, onOpenPrefs, onDebug, onFetchIssues = null, onMarkNotificationRead = null) {
+    this._onFetchIssues = onFetchIssues;
+    this._onMarkNotificationRead = onMarkNotificationRead;
+
+    // Apply font size class
+    this._applyFontSize();
+
     // Header with user info
     this._headerSection = new PopupMenu.PopupMenuSection();
     this._indicator.menu.addMenuItem(this._headerSection);
+
+    // Notifications section (initially hidden)
+    this._notificationsSection = new PopupMenu.PopupMenuSection();
+    this._indicator.menu.addMenuItem(this._notificationsSection);
 
     // Repos container wrapped in ScrollView
     this._reposContainer = new PopupMenu.PopupMenuSection();
@@ -125,14 +145,55 @@ export class GitHubTrayUI {
     }
   }
 
-  updateMenu(repos, username, userInfo = null) {
+  _applyFontSize() {
+    const fontSize = this._settings.get_string("font-size");
+    const menuActor = this._indicator.menu.actor;
+
+    menuActor.remove_style_class_name("github-tray-font-small");
+    menuActor.remove_style_class_name("github-tray-font-medium");
+    menuActor.remove_style_class_name("github-tray-font-large");
+
+    if (fontSize === "medium") {
+      menuActor.add_style_class_name("github-tray-font-medium");
+    } else if (fontSize === "large") {
+      menuActor.add_style_class_name("github-tray-font-large");
+    } else {
+      menuActor.add_style_class_name("github-tray-font-small");
+    }
+  }
+
+  updateBadge(unreadCount) {
+    if (unreadCount > 0) {
+      this._badge?.set_text(unreadCount > 99 ? "99+" : unreadCount.toString());
+      this._badge?.show();
+    } else {
+      this._badge?.hide();
+    }
+  }
+
+  setBadgeWidget(badge) {
+    this._badge = badge;
+  }
+
+  updateMenu(repos, username, userInfo = null, notifications = []) {
     try {
       if (!this._indicator) return;
 
+      this._cachedRepos = repos;
+      this._cachedUsername = username;
+      this._cachedUserInfo = userInfo;
+      this._cachedNotifications = notifications;
+      this._currentView = "repos";
+
+      this._applyFontSize();
       this._headerSection.removeAll();
       this._reposContainer.removeAll();
+      this._notificationsSection.removeAll();
 
       const totalStars = repos.reduce((s, r) => s + r.stargazers_count, 0);
+      const unreadNotifications = notifications.filter((n) => n.unread);
+      const unreadCount = unreadNotifications.length;
+
       const headerItem = new PopupMenu.PopupBaseMenuItem({
         reactive: false,
         can_focus: false,
@@ -143,7 +204,6 @@ export class GitHubTrayUI {
         style_class: "github-tray-header",
       });
 
-      // First row: Avatar + username + followers
       const topRow = new St.BoxLayout({
         vertical: false,
         x_expand: true,
@@ -151,13 +211,11 @@ export class GitHubTrayUI {
         style_class: "github-tray-header-top-row",
       });
 
-      // Avatar + username button container
       const userBox = new St.BoxLayout({
         vertical: false,
         style_class: "github-tray-header-user-box",
       });
 
-      // Avatar image
       if (userInfo?.avatar_url) {
         const avatarIcon = new St.Icon({
           gicon: Gio.Icon.new_for_string(userInfo.avatar_url),
@@ -179,7 +237,7 @@ export class GitHubTrayUI {
             null,
           );
         } catch (e) {
-          logError(e, "GitHubTray:open-profile");
+          console.error(e, "GitHubTray:open-profile");
         }
         this._indicator.menu.close();
       });
@@ -190,7 +248,24 @@ export class GitHubTrayUI {
       const spacer = new St.Widget({ x_expand: true });
       topRow.add_child(spacer);
 
-      // Followers count badge
+      if (this._settings.get_boolean("show-notifications") && unreadCount > 0) {
+        const notifBox = new St.BoxLayout({
+          vertical: false,
+          style_class: "github-tray-header-badge github-tray-header-notifications",
+        });
+        const notifIcon = new St.Label({
+          text: "🔔",
+          style_class: "github-tray-header-icon",
+        });
+        notifBox.add_child(notifIcon);
+        const notifLabel = new St.Label({
+          text: unreadCount.toString(),
+          style_class: "github-tray-header-notifications-text",
+        });
+        notifBox.add_child(notifLabel);
+        topRow.add_child(notifBox);
+      }
+
       if (userInfo?.followers !== undefined) {
         const followersBox = new St.BoxLayout({
           vertical: false,
@@ -211,7 +286,6 @@ export class GitHubTrayUI {
 
       headerBox.add_child(topRow);
 
-      // Second row: Repos count + Stars
       const bottomRow = new St.BoxLayout({
         vertical: false,
         x_expand: true,
@@ -219,7 +293,6 @@ export class GitHubTrayUI {
         style_class: "github-tray-header-bottom-row",
       });
 
-      // Repos count badge
       const reposCountBox = new St.BoxLayout({
         vertical: false,
         style_class: "github-tray-header-badge github-tray-header-repos",
@@ -236,7 +309,6 @@ export class GitHubTrayUI {
       reposCountBox.add_child(reposCountLabel);
       bottomRow.add_child(reposCountBox);
 
-      // Stars badge
       const starsBox = new St.BoxLayout({
         vertical: false,
         style_class: "github-tray-header-badge github-tray-header-stars",
@@ -261,6 +333,10 @@ export class GitHubTrayUI {
       this._headerSection.addMenuItem(headerItem);
       this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
+      if (this._settings.get_boolean("show-notifications") && unreadNotifications.length > 0) {
+        this._buildNotificationsSection(unreadNotifications);
+      }
+
       if (repos.length === 0) {
         this.showMessage(_("No repositories found"));
         return;
@@ -271,8 +347,177 @@ export class GitHubTrayUI {
         this._reposContainer.addMenuItem(item);
       }
     } catch (e) {
-      logError(e, "GitHubTray:updateMenu");
+      console.error(e, "GitHubTray:updateMenu");
     }
+  }
+
+  _buildNotificationsSection(notifications) {
+    const maxDisplay = 5;
+    const displayNotifications = notifications.slice(0, maxDisplay);
+
+    const sectionTitle = new PopupMenu.PopupBaseMenuItem({
+      reactive: false,
+      can_focus: false,
+    });
+    const titleBox = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      style_class: "github-tray-notification-header",
+    });
+    const titleLabel = new St.Label({
+      text: _("Notifications"),
+      style_class: "github-tray-notification-section-title",
+      x_expand: true,
+    });
+    titleBox.add_child(titleLabel);
+
+    const openAllBtn = new St.Button({
+      label: _("Open All"),
+      style_class: "button github-tray-link-btn-blue",
+      can_focus: true,
+    });
+    openAllBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri("https://github.com/notifications", null);
+      } catch (e) {
+        console.error(e, "GitHubTray:open-notifications");
+      }
+      this._indicator.menu.close();
+    });
+    titleBox.add_child(openAllBtn);
+
+    sectionTitle.add_child(titleBox);
+    this._headerSection.addMenuItem(sectionTitle);
+
+    for (const notification of displayNotifications) {
+      const item = this._createNotificationItem(notification);
+      this._headerSection.addMenuItem(item);
+    }
+
+    if (notifications.length > maxDisplay) {
+      const moreItem = new PopupMenu.PopupBaseMenuItem({
+        reactive: false,
+        can_focus: false,
+      });
+      const moreLabel = new St.Label({
+        text: _("+ %d more").format(notifications.length - maxDisplay),
+        style_class: "github-tray-notification-more",
+      });
+      moreItem.add_child(moreLabel);
+      this._headerSection.addMenuItem(moreItem);
+    }
+  }
+
+  _createNotificationItem(notification) {
+    const menuItem = new PopupMenu.PopupBaseMenuItem({
+      style_class: "github-tray-notification-item",
+      can_focus: true,
+    });
+
+    const mainBox = new St.BoxLayout({
+      vertical: true,
+      x_expand: true,
+      style_class: "github-tray-notification-box",
+    });
+
+    const topRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+      style_class: "github-tray-notification-top-row",
+    });
+
+    const iconMap = {
+      Issue: "🔴",
+      IssueComment: "💬",
+      PullRequest: "🟣",
+      PullRequestReview: "👀",
+      PullRequestReviewComment: "💬",
+      Commit: "📝",
+      Release: "🏷️",
+      Discussion: "🗣️",
+      Mention: "📛",
+      Assign: "👤",
+      ReviewRequested: "🔍",
+      SecurityAlert: "⚠️",
+    };
+
+    const typeIcon = new St.Label({
+      text: iconMap[notification.subject.type] || "📌",
+      style_class: "github-tray-notification-type-icon",
+    });
+    topRow.add_child(typeIcon);
+
+    const repoLabel = new St.Label({
+      text: notification.repository.full_name,
+      style_class: "github-tray-notification-repo",
+    });
+    topRow.add_child(repoLabel);
+
+    const spacer = new St.Widget({ x_expand: true });
+    topRow.add_child(spacer);
+
+    mainBox.add_child(topRow);
+
+    const titleRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    const titleBtn = new St.Button({
+      label: notification.subject.title,
+      style_class: "button github-tray-notification-title-btn",
+      can_focus: true,
+      x_expand: true,
+      x_align: Clutter.ActorAlign.START,
+    });
+    const titleBtnChild = titleBtn.get_child();
+    if (titleBtnChild && titleBtnChild.clutter_text) {
+      titleBtnChild.clutter_text.set_ellipsize(3);
+    }
+    titleBtn.connect("clicked", () => {
+      this._openNotification(notification);
+    });
+    titleRow.add_child(titleBtn);
+
+    const markReadBtn = new St.Button({
+      style_class: "button github-tray-mark-read-btn",
+      can_focus: true,
+    });
+    const checkIcon = new St.Label({ text: "✓" });
+    markReadBtn.set_child(checkIcon);
+    markReadBtn.connect("clicked", () => {
+      if (this._onMarkNotificationRead) {
+        this._onMarkNotificationRead(notification, () => {
+          menuItem.destroy();
+        });
+      }
+    });
+    titleRow.add_child(markReadBtn);
+
+    mainBox.add_child(titleRow);
+    menuItem.add_child(mainBox);
+
+    menuItem.connect("activate", () => {
+      this._openNotification(notification);
+    });
+
+    return menuItem;
+  }
+
+  _openNotification(notification) {
+    const url = notification.subject.url?.replace("api.github.com/repos", "github.com") ||
+      notification.repository.html_url;
+    try {
+      Gio.AppInfo.launch_default_for_uri(url, null);
+    } catch (e) {
+      console.error(e, "GitHubTray:open-notification");
+    }
+    if (this._onMarkNotificationRead) {
+      this._onMarkNotificationRead(notification, () => {});
+    }
+    this._indicator.menu.close();
   }
 
   _createRepoItem(repo) {
@@ -325,7 +570,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(repo.html_url, null);
       } catch (e) {
-        logError(e, "GitHubTray:open-repo");
+        console.error(e, "GitHubTray:open-repo");
       }
       this._indicator.menu.close();
     });
@@ -369,7 +614,7 @@ export class GitHubTrayUI {
         try {
           Gio.AppInfo.launch_default_for_uri(repo.parent.html_url, null);
         } catch (e) {
-          logError(e, "GitHubTray:open-fork");
+          console.error(e, "GitHubTray:open-fork");
         }
         this._indicator.menu.close();
       });
@@ -409,7 +654,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/stargazers`, null);
       } catch (e) {
-        logError(e, "GitHubTray:open-stars");
+        console.error(e, "GitHubTray:open-stars");
       }
       this._indicator.menu.close();
     });
@@ -443,7 +688,7 @@ export class GitHubTrayUI {
           null,
         );
       } catch (e) {
-        logError(e, "GitHubTray:open-forks");
+        console.error(e, "GitHubTray:open-forks");
       }
       this._indicator.menu.close();
     });
@@ -471,12 +716,18 @@ export class GitHubTrayUI {
     });
     issuesBtn.set_child(issuesBox);
     issuesBtn.connect("clicked", () => {
-      try {
-        Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/issues`, null);
-      } catch (e) {
-        logError(e, "GitHubTray:open-issues");
+      if (this._onFetchIssues && repo.open_issues_count > 0) {
+        this._onFetchIssues(repo, (issues) => {
+          this.showIssuesView(repo, issues);
+        });
+      } else {
+        try {
+          Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/issues`, null);
+        } catch (e) {
+          console.error(e, "GitHubTray:open-issues");
+        }
+        this._indicator.menu.close();
       }
-      this._indicator.menu.close();
     });
     statsRow.add_child(issuesBtn);
 
@@ -530,7 +781,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(repo.html_url, null);
       } catch (e) {
-        logError(e, "GitHubTray:open-uri");
+        console.error(e, "GitHubTray:open-uri");
       }
       this._indicator.menu.close();
     });
@@ -559,7 +810,7 @@ export class GitHubTrayUI {
 
       Gio.Subprocess.new([editor, path], Gio.SubprocessFlags.NONE);
     } catch (e) {
-      logError(e, "GitHubTray:open-local");
+      console.error(e, "GitHubTray:open-local");
     }
   }
 
@@ -573,7 +824,214 @@ export class GitHubTrayUI {
       });
       this._reposContainer.addMenuItem(item);
     } catch (e) {
-      logError(e, "GitHubTray:showMessage");
+      console.error(e, "GitHubTray:showMessage");
+    }
+  }
+
+  showIssuesView(repo, issues) {
+    if (!this._indicator) return;
+
+    this._currentView = "issues";
+    this._currentRepo = repo;
+
+    this._headerSection.removeAll();
+    this._reposContainer.removeAll();
+
+    const headerItem = new PopupMenu.PopupBaseMenuItem({
+      reactive: false,
+      can_focus: false,
+    });
+    const headerBox = new St.BoxLayout({
+      vertical: true,
+      x_expand: true,
+      style_class: "github-tray-header",
+    });
+
+    const topRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    const backBtn = new St.Button({
+      label: _("← Back"),
+      style_class: "button github-tray-back-btn",
+      can_focus: true,
+    });
+    backBtn.connect("clicked", () => {
+      this.showReposView();
+    });
+    topRow.add_child(backBtn);
+
+    const spacer = new St.Widget({ x_expand: true });
+    topRow.add_child(spacer);
+
+    const openInBrowserBtn = new St.Button({
+      label: _("Open in Browser"),
+      style_class: "button github-tray-link-btn-blue",
+      can_focus: true,
+    });
+    openInBrowserBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/issues`, null);
+      } catch (e) {
+        console.error(e, "GitHubTray:open-issues-browser");
+      }
+      this._indicator.menu.close();
+    });
+    topRow.add_child(openInBrowserBtn);
+
+    headerBox.add_child(topRow);
+
+    const titleRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      style_class: "github-tray-issues-title-row",
+    });
+    const titleLabel = new St.Label({
+      text: `${repo.name} - ${_("Issues")}`,
+      style_class: "github-tray-issues-title",
+      x_expand: true,
+    });
+    titleRow.add_child(titleLabel);
+    headerBox.add_child(titleRow);
+
+    headerItem.add_child(headerBox);
+    this._headerSection.addMenuItem(headerItem);
+    this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+    if (!issues || issues.length === 0) {
+      this.showMessage(_("No open issues"));
+      return;
+    }
+
+    for (const issue of issues) {
+      const item = this._createIssueItem(issue, repo);
+      this._reposContainer.addMenuItem(item);
+    }
+  }
+
+  _createIssueItem(issue, repo) {
+    const menuItem = new PopupMenu.PopupBaseMenuItem({
+      style_class: "github-tray-issue-item",
+      can_focus: true,
+    });
+
+    const mainBox = new St.BoxLayout({
+      vertical: true,
+      x_expand: true,
+      style_class: "github-tray-issue-box",
+    });
+
+    const topRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+      style_class: "github-tray-issue-top-row",
+    });
+
+    const stateIcon = new St.Label({
+      text: issue.state === "open" ? "🟢" : "🟣",
+      style_class: "github-tray-issue-state-icon",
+    });
+    topRow.add_child(stateIcon);
+
+    const issueNumber = new St.Label({
+      text: `#${issue.number}`,
+      style_class: "github-tray-issue-number",
+    });
+    topRow.add_child(issueNumber);
+
+    const titleBtn = new St.Button({
+      label: issue.title,
+      style_class: "button github-tray-issue-title",
+      can_focus: true,
+      x_expand: true,
+      x_align: Clutter.ActorAlign.START,
+    });
+    const titleBtnChild = titleBtn.get_child();
+    if (titleBtnChild && titleBtnChild.clutter_text) {
+      titleBtnChild.clutter_text.set_ellipsize(3);
+    }
+    titleBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(issue.html_url, null);
+      } catch (e) {
+        console.error(e, "GitHubTray:open-issue");
+      }
+      this._indicator.menu.close();
+    });
+    topRow.add_child(titleBtn);
+
+    mainBox.add_child(topRow);
+
+    if (issue.labels && issue.labels.length > 0) {
+      const labelsRow = new St.BoxLayout({
+        vertical: false,
+        x_expand: true,
+        style_class: "github-tray-issue-labels-row",
+      });
+      for (const label of issue.labels.slice(0, 4)) {
+        const labelBox = new St.Label({
+          text: label.name,
+          style_class: "github-tray-issue-label",
+          style: `background-color: #${label.color};`,
+        });
+        labelsRow.add_child(labelBox);
+      }
+      if (issue.labels.length > 4) {
+        const moreLabel = new St.Label({
+          text: `+${issue.labels.length - 4}`,
+          style_class: "github-tray-issue-label-more",
+        });
+        labelsRow.add_child(moreLabel);
+      }
+      mainBox.add_child(labelsRow);
+    }
+
+    const metaRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      style_class: "github-tray-issue-meta-row",
+    });
+
+    if (issue.user) {
+      const authorLabel = new St.Label({
+        text: `@${issue.user.login}`,
+        style_class: "github-tray-issue-author",
+      });
+      metaRow.add_child(authorLabel);
+    }
+
+    const spacer = new St.Widget({ x_expand: true });
+    metaRow.add_child(spacer);
+
+    const updatedStr = relativeTime(issue.updated_at);
+    const updatedLabel = new St.Label({
+      text: updatedStr,
+      style_class: "github-tray-issue-updated",
+    });
+    metaRow.add_child(updatedLabel);
+
+    mainBox.add_child(metaRow);
+
+    menuItem.add_child(mainBox);
+
+    menuItem.connect("activate", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(issue.html_url, null);
+      } catch (e) {
+        console.error(e, "GitHubTray:open-issue-activate");
+      }
+      this._indicator.menu.close();
+    });
+
+    return menuItem;
+  }
+
+  showReposView() {
+    if (this._cachedRepos && this._cachedUsername) {
+      this.updateMenu(this._cachedRepos, this._cachedUsername, this._cachedUserInfo, this._cachedNotifications);
     }
   }
 }

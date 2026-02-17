@@ -197,6 +197,23 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
     });
     displayGroup.add(maxReposRow);
 
+    // Font size
+    const fontSizeRow = new Adw.ComboRow({
+      title: _("Font Size"),
+      subtitle: _("Adjust the size of text in the menu"),
+      model: Gtk.StringList.new([_("Small"), _("Medium"), _("Large")]),
+    });
+
+    const fontSizeMap = ["small", "medium", "large"];
+    const currentFontSize = settings.get_string("font-size");
+    const fontSizeIdx = fontSizeMap.indexOf(currentFontSize);
+    fontSizeRow.selected = fontSizeIdx !== -1 ? fontSizeIdx : 0;
+
+    fontSizeRow.connect("notify::selected", () => {
+      settings.set_string("font-size", fontSizeMap[fontSizeRow.selected]);
+    });
+    displayGroup.add(fontSizeRow);
+
     page.add(displayGroup);
 
     // --- Local Projects group ---
@@ -217,6 +234,115 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
     localGroup.add(editorRow);
 
     page.add(localGroup);
+
+    // --- Notifications group ---
+    const notificationsGroup = new Adw.PreferencesGroup({
+      title: _("Notifications"),
+      description: _("Configure GitHub notifications display"),
+    });
+
+    // Show notifications toggle
+    const showNotificationsRow = new Adw.SwitchRow({
+      title: _("Show GitHub Notifications"),
+      subtitle: _("Display GitHub notifications in the menu"),
+      active: settings.get_boolean("show-notifications"),
+    });
+    showNotificationsRow.connect("notify::active", () => {
+      settings.set_boolean("show-notifications", showNotificationsRow.active);
+    });
+    notificationsGroup.add(showNotificationsRow);
+
+    // Desktop notifications toggle
+    const desktopNotificationsRow = new Adw.SwitchRow({
+      title: _("Desktop Notifications"),
+      subtitle: _("Show desktop notifications for new GitHub notifications"),
+      active: settings.get_boolean("desktop-notifications"),
+    });
+    desktopNotificationsRow.connect("notify::active", () => {
+      settings.set_boolean("desktop-notifications", desktopNotificationsRow.active);
+    });
+    notificationsGroup.add(desktopNotificationsRow);
+
+    // Notification refresh interval
+    const intervalRow = new Adw.SpinRow({
+      title: _("Refresh Interval"),
+      subtitle: _("Seconds between notification checks"),
+      adjustment: new Gtk.Adjustment({
+        lower: 30,
+        upper: 600,
+        step_increment: 30,
+        value: settings.get_int("notification-interval"),
+      }),
+    });
+    intervalRow.connect("notify::value", () => {
+      settings.set_int("notification-interval", intervalRow.value);
+    });
+    notificationsGroup.add(intervalRow);
+
+    page.add(notificationsGroup);
+
+    // --- Notification Types group ---
+    const notificationTypesGroup = new Adw.PreferencesGroup({
+      title: _("Notification Types"),
+      description: _("Choose which notification types to show"),
+    });
+
+    // Review requests
+    const reviewRequestsRow = new Adw.SwitchRow({
+      title: _("Review Requests"),
+      subtitle: _("When someone requests your review on a PR"),
+      active: settings.get_boolean("notify-review-requests"),
+    });
+    reviewRequestsRow.connect("notify::active", () => {
+      settings.set_boolean("notify-review-requests", reviewRequestsRow.active);
+    });
+    notificationTypesGroup.add(reviewRequestsRow);
+
+    // Mentions
+    const mentionsRow = new Adw.SwitchRow({
+      title: _("Mentions"),
+      subtitle: _("When someone mentions you"),
+      active: settings.get_boolean("notify-mentions"),
+    });
+    mentionsRow.connect("notify::active", () => {
+      settings.set_boolean("notify-mentions", mentionsRow.active);
+    });
+    notificationTypesGroup.add(mentionsRow);
+
+    // Assignments
+    const assignmentsRow = new Adw.SwitchRow({
+      title: _("Assignments"),
+      subtitle: _("When you are assigned to an issue or PR"),
+      active: settings.get_boolean("notify-assignments"),
+    });
+    assignmentsRow.connect("notify::active", () => {
+      settings.set_boolean("notify-assignments", assignmentsRow.active);
+    });
+    notificationTypesGroup.add(assignmentsRow);
+
+    // PR comments
+    const prCommentsRow = new Adw.SwitchRow({
+      title: _("Pull Request Comments"),
+      subtitle: _("Comments on pull requests"),
+      active: settings.get_boolean("notify-pr-comments"),
+    });
+    prCommentsRow.connect("notify::active", () => {
+      settings.set_boolean("notify-pr-comments", prCommentsRow.active);
+    });
+    notificationTypesGroup.add(prCommentsRow);
+
+    // Issue comments
+    const issueCommentsRow = new Adw.SwitchRow({
+      title: _("Issue Comments"),
+      subtitle: _("Comments on issues"),
+      active: settings.get_boolean("notify-issue-comments"),
+    });
+    issueCommentsRow.connect("notify::active", () => {
+      settings.set_boolean("notify-issue-comments", issueCommentsRow.active);
+    });
+    notificationTypesGroup.add(issueCommentsRow);
+
+    page.add(notificationTypesGroup);
 
     // --- Local Path Mappings group ---
     const mappingsGroup = new Adw.PreferencesGroup({
