@@ -65,7 +65,13 @@ export class GitHubTrayUI {
     this._onMarkNotificationRead = null;
   }
 
-  buildMenu(onRefresh, onOpenPrefs, onDebug, onFetchIssues = null, onMarkNotificationRead = null) {
+  buildMenu(
+    onRefresh,
+    onOpenPrefs,
+    onDebug,
+    onFetchIssues = null,
+    onMarkNotificationRead = null,
+  ) {
     this._onFetchIssues = onFetchIssues;
     this._onMarkNotificationRead = onMarkNotificationRead;
 
@@ -181,8 +187,6 @@ export class GitHubTrayUI {
     this._badge = badge;
   }
 
-
-
   updateMenu(repos, username, userInfo = null, notifications = []) {
     try {
       if (!this._indicator) return;
@@ -259,7 +263,8 @@ export class GitHubTrayUI {
       if (this._settings.get_boolean("show-notifications") && unreadCount > 0) {
         const notifBox = new St.BoxLayout({
           vertical: false,
-          style_class: "github-tray-header-badge github-tray-header-notifications",
+          style_class:
+            "github-tray-header-badge github-tray-header-notifications",
         });
         const notifIcon = new St.Label({
           text: "🔔",
@@ -341,7 +346,9 @@ export class GitHubTrayUI {
       this._headerSection.addMenuItem(headerItem);
       this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-      const showNotifications = this._settings.get_boolean("show-notifications") && unreadNotifications.length > 0;
+      const showNotifications =
+        this._settings.get_boolean("show-notifications") &&
+        unreadNotifications.length > 0;
       const showRepos = repos.length > 0;
 
       if (showNotifications && showRepos) {
@@ -392,7 +399,10 @@ export class GitHubTrayUI {
     });
     openAllBtn.connect("clicked", () => {
       try {
-        Gio.AppInfo.launch_default_for_uri("https://github.com/notifications", null);
+        Gio.AppInfo.launch_default_for_uri(
+          "https://github.com/notifications",
+          null,
+        );
       } catch (e) {
         console.error(e, "GitHubTray:open-notifications");
       }
@@ -422,7 +432,14 @@ export class GitHubTrayUI {
     }
   }
 
-  _createAccordionHeader(title, count, isExpanded, onToggle, iconName = null, actionButton = null) {
+  _createAccordionHeader(
+    title,
+    count,
+    isExpanded,
+    onToggle,
+    iconName = null,
+    actionButton = null,
+  ) {
     const headerItem = new PopupMenu.PopupBaseMenuItem({
       reactive: false,
       can_focus: false,
@@ -435,16 +452,6 @@ export class GitHubTrayUI {
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-accordion-header-box",
     });
-
-    // Create icon if provided
-    if (iconName) {
-      const icon = new St.Icon({
-        icon_name: iconName,
-        icon_size: 14,
-        style_class: "github-tray-accordion-icon",
-      });
-      headerBox.add_child(icon);
-    }
 
     const arrowIcon = new St.Label({
       text: isExpanded ? "▼" : "▶",
@@ -475,7 +482,20 @@ export class GitHubTrayUI {
       style: "spacing: 8px;",
     });
 
+    // Add arrow first (caret)
     toggleBox.add_child(arrowIcon);
+
+    // Then add icon if provided
+    if (iconName) {
+      const icon = new St.Icon({
+        icon_name: iconName,
+        icon_size: 14,
+        style_class: "github-tray-accordion-icon",
+      });
+      toggleBox.add_child(icon);
+    }
+
+    // Finally add title and count
     toggleBox.add_child(titleLabel);
     toggleBox.add_child(countLabel);
     toggleButton.set_child(toggleBox);
@@ -508,7 +528,10 @@ export class GitHubTrayUI {
     });
     openAllBtn.connect("clicked", () => {
       try {
-        Gio.AppInfo.launch_default_for_uri("https://github.com/notifications", null);
+        Gio.AppInfo.launch_default_for_uri(
+          "https://github.com/notifications",
+          null,
+        );
       } catch (e) {
         console.error(e, "GitHubTray:open-notifications");
       }
@@ -523,16 +546,18 @@ export class GitHubTrayUI {
         this._notificationsExpanded = !this._notificationsExpanded;
         icon.set_text(this._notificationsExpanded ? "▼" : "▶");
         if (this._notificationsAccordionContent) {
-          this._notificationsAccordionContent.actor.visible = this._notificationsExpanded;
+          this._notificationsAccordionContent.actor.visible =
+            this._notificationsExpanded;
         }
       },
-      "notification-symbolic",
-      openAllBtn
+      "preferences-system-notifications-symbolic",
+      openAllBtn,
     );
     this._headerSection.addMenuItem(headerItem);
 
     this._notificationsAccordionContent = new PopupMenu.PopupMenuSection();
-    this._notificationsAccordionContent.actor.visible = this._notificationsExpanded;
+    this._notificationsAccordionContent.actor.visible =
+      this._notificationsExpanded;
 
     for (const notification of displayNotifications) {
       const item = this._createNotificationItem(notification);
@@ -568,7 +593,7 @@ export class GitHubTrayUI {
           this._reposAccordionContent.visible = this._reposExpanded;
         }
       },
-      "folder-documents-symbolic"
+      "folder-documents-symbolic",
     );
     this._headerSection.addMenuItem(headerItem);
 
@@ -683,7 +708,8 @@ export class GitHubTrayUI {
   }
 
   _openNotification(notification) {
-    const url = notification.subject.url?.replace("api.github.com/repos", "github.com") ||
+    const url =
+      notification.subject.url?.replace("api.github.com/repos", "github.com") ||
       notification.repository.html_url;
     try {
       Gio.AppInfo.launch_default_for_uri(url, null);
@@ -1208,7 +1234,12 @@ export class GitHubTrayUI {
 
   showReposView() {
     if (this._cachedRepos && this._cachedUsername) {
-      this.updateMenu(this._cachedRepos, this._cachedUsername, this._cachedUserInfo, this._cachedNotifications);
+      this.updateMenu(
+        this._cachedRepos,
+        this._cachedUsername,
+        this._cachedUserInfo,
+        this._cachedNotifications,
+      );
     }
   }
 }
