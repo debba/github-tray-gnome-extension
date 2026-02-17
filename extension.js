@@ -86,6 +86,7 @@ export default class GitHubTrayExtension extends Extension {
         this._markNotificationRead(notification, callback),
       (workflowRun, callback) => this._rerunWorkflow(workflowRun, callback),
       (repo, callback) => this._fetchRepoWorkflowRuns(repo, callback),
+      () => this._loadNotifications(),
     );
     this._debugBtn = debugBtn;
 

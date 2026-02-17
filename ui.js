@@ -76,11 +76,13 @@ export class GitHubTrayUI {
     onMarkNotificationRead = null,
     onRerunWorkflow = null,
     onFetchWorkflowRuns = null,
+    onRefreshNotifications = null,
   ) {
     this._onFetchIssues = onFetchIssues;
     this._onMarkNotificationRead = onMarkNotificationRead;
     this._onRerunWorkflow = onRerunWorkflow;
     this._onFetchWorkflowRuns = onFetchWorkflowRuns;
+    this._onRefreshNotifications = onRefreshNotifications;
 
     // Apply font size class
     this._applyFontSize();
@@ -195,7 +197,9 @@ export class GitHubTrayUI {
   }
 
   updateMenu(repos, username, userInfo = null, notifications = []) {
-    console.log(`[GitHubTray UI] updateMenu called - repos: ${repos.length}, notifications: ${notifications.length}`);
+    console.log(
+      `[GitHubTray UI] updateMenu called - repos: ${repos.length}, notifications: ${notifications.length}`,
+    );
     try {
       if (!this._indicator) return;
 
@@ -342,15 +346,23 @@ export class GitHubTrayUI {
         unreadNotifications.length > 0;
       const showRepos = repos.length > 0;
 
-      console.log(`[GitHubTray UI] Section visibility - Notifications: ${showNotifications} (setting: ${this._settings.get_boolean("show-notifications")}, count: ${unreadNotifications.length})`);
-      console.log(`[GitHubTray UI] Section visibility - Repos: ${showRepos} (count: ${repos.length})`);
+      console.log(
+        `[GitHubTray UI] Section visibility - Notifications: ${showNotifications} (setting: ${this._settings.get_boolean("show-notifications")}, count: ${unreadNotifications.length})`,
+      );
+      console.log(
+        `[GitHubTray UI] Section visibility - Repos: ${showRepos} (count: ${repos.length})`,
+      );
 
-      const sectionsCount = [showNotifications, showRepos].filter(Boolean).length;
+      const sectionsCount = [showNotifications, showRepos].filter(
+        Boolean,
+      ).length;
       console.log(`[GitHubTray UI] Total sections to show: ${sectionsCount}`);
 
       if (sectionsCount > 1) {
         // Use accordions when multiple sections are present
-        console.log("[GitHubTray UI] Using accordion layout (multiple sections)");
+        console.log(
+          "[GitHubTray UI] Using accordion layout (multiple sections)",
+        );
         if (showNotifications) {
           console.log("[GitHubTray UI] Building notifications accordion");
           this._buildNotificationsAccordion(unreadNotifications);
@@ -400,6 +412,20 @@ export class GitHubTrayUI {
     });
     titleBox.add_child(titleLabel);
 
+    // Refresh button
+    const refreshBtn = new St.Button({
+      label: _("Refresh"),
+      style_class: "button github-tray-link-btn-blue",
+      can_focus: true,
+    });
+    refreshBtn.connect("clicked", () => {
+      if (this._onRefreshNotifications) {
+        this._onRefreshNotifications();
+      }
+    });
+    titleBox.add_child(refreshBtn);
+
+    // Open All button
     const openAllBtn = new St.Button({
       label: _("Open All"),
       style_class: "button github-tray-link-btn-blue",
@@ -529,6 +555,26 @@ export class GitHubTrayUI {
     const maxDisplay = 5;
     const displayNotifications = notifications.slice(0, maxDisplay);
 
+    // Create a container for both buttons
+    const buttonsBox = new St.BoxLayout({
+      vertical: false,
+      style: "spacing: 4px;",
+    });
+
+    // Refresh button
+    const refreshBtn = new St.Button({
+      label: _("Refresh"),
+      style_class: "github-tray-accordion-action-btn",
+      can_focus: true,
+    });
+    refreshBtn.connect("clicked", () => {
+      if (this._onRefreshNotifications) {
+        this._onRefreshNotifications();
+      }
+    });
+    buttonsBox.add_child(refreshBtn);
+
+    // Open All button
     const openAllBtn = new St.Button({
       label: _("Open All"),
       style_class: "github-tray-accordion-action-btn",
@@ -545,6 +591,7 @@ export class GitHubTrayUI {
       }
       this._indicator.menu.close();
     });
+    buttonsBox.add_child(openAllBtn);
 
     const { headerItem, arrowIcon } = this._createAccordionHeader(
       _("Notifications"),
@@ -559,7 +606,7 @@ export class GitHubTrayUI {
         }
       },
       "preferences-system-notifications-symbolic",
-      openAllBtn,
+      buttonsBox,
     );
     this._headerSection.addMenuItem(headerItem);
 
@@ -761,7 +808,10 @@ export class GitHubTrayUI {
       return _("Queued");
     }
     if (run.status === "completed") {
-      const duration = this._calculateDuration(run.run_started_at, run.updated_at);
+      const duration = this._calculateDuration(
+        run.run_started_at,
+        run.updated_at,
+      );
       switch (run.conclusion) {
         case "success":
           return _("Success • %s").format(duration);
@@ -780,7 +830,7 @@ export class GitHubTrayUI {
 
   _calculateDuration(startTime, endTime) {
     if (!startTime) return "";
-    
+
     const start = GLib.DateTime.new_from_iso8601(startTime, null);
     const end = endTime
       ? GLib.DateTime.new_from_iso8601(endTime, null)
@@ -1489,8 +1539,10 @@ export class GitHubTrayUI {
   }
 
   showWorkflowRunsView(repo, workflowRuns) {
-    console.log(`[GitHubTray UI] showWorkflowRunsView called for ${repo.name} with ${workflowRuns ? workflowRuns.length : 0} workflow runs`);
-    
+    console.log(
+      `[GitHubTray UI] showWorkflowRunsView called for ${repo.name} with ${workflowRuns ? workflowRuns.length : 0} workflow runs`,
+    );
+
     if (!this._indicator) return;
 
     this._currentView = "workflow-runs";
@@ -1568,7 +1620,9 @@ export class GitHubTrayUI {
       return;
     }
 
-    console.log(`[GitHubTray UI] Creating ${workflowRuns.length} workflow run items`);
+    console.log(
+      `[GitHubTray UI] Creating ${workflowRuns.length} workflow run items`,
+    );
     for (const run of workflowRuns) {
       const item = this._createWorkflowRunItem(run);
       this._reposContainer.addMenuItem(item);
