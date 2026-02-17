@@ -496,21 +496,25 @@
 .github-tray-stats-row {
     margin-top: 4px;
     spacing: 4px;
+    y-align: center;
 }
 
 .github-tray-stat {
     margin-right: 2px;
     spacing: 2px;
+    y-align: center;
 }
 
 .github-tray-stat-icon {
     font-size: 10px;
+    y-align: center;
 }
 
 .github-tray-stat-value {
     font-size: 10px;
     font-weight: 500;
     color: #b1bac4;
+    y-align: center;
 }
 
 .github-tray-issues-value {
@@ -522,6 +526,7 @@
     color: #6e7681;
     font-weight: 400;
     font-style: italic;
+    y-align: center;
 }
 
 /* ── Stats buttons (stars, forks, issues) ───────────────────── */
@@ -550,25 +555,42 @@
     border: 1px solid rgba(248, 81, 73, 0.25);
 }
 
-/* ── Folder button (local project opener) ───────────────────── */
+/* ── Side action buttons (workflow, folder) - Compact version ─── */
+
+.github-tray-workflow-btn-compact,
+.github-tray-folder-btn-compact {
+    padding: 3px;
+    min-width: 20px;
+    min-height: 20px;
+    background-color: rgba(48, 54, 61, 0.4);
+    border-radius: 5px;
+    border: 1px solid rgba(48, 54, 61, 0.6);
+}
+
+.github-tray-workflow-btn-compact:hover {
+    background-color: rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.4);
+    box-shadow: 0 0 6px rgba(88, 166, 255, 0.2);
+}
+
+.github-tray-workflow-icon {
+    color: #8b949e;
+    icon-size: 12px;
+}
+
+.github-tray-workflow-btn-compact:hover .github-tray-workflow-icon {
+    color: #58a6ff;
+}
+
+.github-tray-folder-btn-compact:hover {
+    background-color: rgba(35, 134, 54, 0.2);
+    border: 1px solid rgba(46, 160, 67, 0.5);
+    box-shadow: 0 0 6px rgba(46, 160, 67, 0.2);
+}
 
 .github-tray-folder-icon {
-    color: #238636;
-    margin-left: 4px;
-}
-
-.github-tray-folder-btn {
-    padding: 8px;
-    background-color: rgba(35, 134, 54, 0.1);
-    border-radius: 8px;
-    border: 1px solid rgba(35, 134, 54, 0.3);
-    margin-left: 6px;
-}
-
-.github-tray-folder-btn:hover {
-    background-color: rgba(35, 134, 54, 0.25);
-    border: 1px solid rgba(46, 160, 67, 0.6);
-    box-shadow: 0 0 8px rgba(46, 160, 67, 0.2);
+    color: #3fb950;
+    icon-size: 12px;
 }
 
 /* ── Description ────────────────────────────────────────────── */
@@ -577,7 +599,15 @@
     font-size: 9px;
     color: #7d8590;
     margin-top: 3px;
+    margin-bottom: 4px;
     font-weight: 400;
+}
+
+/* ── Actions row (workflow/folder buttons under description) ─ */
+
+.github-tray-actions-row {
+    margin-top: 6px;
+    spacing: 4px;
 }
 
 /* ── Bottom bar ─────────────────────────────────────────────── */

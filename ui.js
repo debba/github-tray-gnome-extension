@@ -967,7 +967,8 @@ export class GitHubTrayUI {
     const mainBox = new St.BoxLayout({
       vertical: false,
       x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.START,
+      style: "spacing: 6px;",
     });
 
     const outerBox = new St.BoxLayout({
@@ -1192,15 +1193,22 @@ export class GitHubTrayUI {
       outerBox.add_child(descLabel);
     }
 
+    // Action buttons (workflow and folder) under description, aligned to the right
+    const sideButtonsBox = new St.BoxLayout({
+      vertical: false,
+      y_align: Clutter.ActorAlign.CENTER,
+      style: "spacing: 4px;",
+    });
+
     // Workflow runs button
     const workflowBtn = new St.Button({
-      style_class: "button github-tray-workflow-btn",
+      style_class: "button github-tray-workflow-btn-compact",
       can_focus: true,
     });
     const workflowIcon = new St.Icon({
-      icon_name: "system-run-symbolic",
-      icon_size: 20,
-      style: "color: #8b949e;",
+      icon_name: "media-playback-start-symbolic",
+      icon_size: 12,
+      style_class: "github-tray-workflow-icon",
     });
     workflowBtn.set_child(workflowIcon);
     workflowBtn.connect("clicked", () => {
@@ -1210,26 +1218,37 @@ export class GitHubTrayUI {
         });
       }
     });
-    mainBox.add_child(workflowBtn);
+    sideButtonsBox.add_child(workflowBtn);
 
     // Folder button if local path exists
     if (localPath) {
       const folderBtn = new St.Button({
-        style_class: "button github-tray-folder-btn",
+        style_class: "button github-tray-folder-btn-compact",
         can_focus: true,
       });
       const folderIcon = new St.Icon({
         icon_name: "folder-symbolic",
-        icon_size: 20,
-        style: "color: #3fb950;",
+        icon_size: 12,
+        style_class: "github-tray-folder-icon",
       });
       folderBtn.set_child(folderIcon);
       folderBtn.connect("clicked", () => {
         this._openLocalProject(localPath);
         this._indicator.menu.close();
       });
-      mainBox.add_child(folderBtn);
+      sideButtonsBox.add_child(folderBtn);
     }
+
+    // Actions row - bottom right under description
+    const actionsRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      x_align: Clutter.ActorAlign.END,
+      y_align: Clutter.ActorAlign.CENTER,
+      style_class: "github-tray-actions-row",
+    });
+    actionsRow.add_child(sideButtonsBox);
+    outerBox.add_child(actionsRow);
 
     mainBox.add_child(outerBox);
     menuItem.add_child(mainBox);
