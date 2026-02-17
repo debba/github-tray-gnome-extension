@@ -137,6 +137,94 @@
     font-size: 11px;
 }
 
+.github-tray-font-medium .github-tray-accordion-arrow {
+    font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-accordion-title {
+    font-size: 13px;
+}
+
+.github-tray-font-medium .github-tray-accordion-count {
+    font-size: 12px;
+}
+
+.github-tray-font-medium .github-tray-notification-section-title {
+    font-size: 13px;
+}
+
+.github-tray-font-medium .github-tray-notification-more {
+    font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-message {
+    font-size: 12px;
+}
+
+.github-tray-font-medium .github-tray-notification-type-icon {
+    font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-notification-title-btn {
+    font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-mark-read-btn {
+    font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-issue-state-icon {
+    font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-issue-label-more {
+    font-size: 9px;
+}
+
+.github-tray-font-large .github-tray-accordion-arrow {
+    font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-accordion-title {
+    font-size: 14px;
+}
+
+.github-tray-font-large .github-tray-accordion-count {
+    font-size: 13px;
+}
+
+.github-tray-font-large .github-tray-notification-section-title {
+    font-size: 14px;
+}
+
+.github-tray-font-large .github-tray-notification-more {
+    font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-message {
+    font-size: 13px;
+}
+
+.github-tray-font-large .github-tray-notification-type-icon {
+    font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-notification-title-btn {
+    font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-mark-read-btn {
+    font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-issue-state-icon {
+    font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-issue-label-more {
+    font-size: 10px;
+}
+
 /* ── Notification badge ─────────────────────────────────────── */
 
 .github-tray-badge {
@@ -356,6 +444,14 @@
 
 .github-tray-repo-lang-dot {
     font-size: 8px;
+}
+
+.github-tray-font-medium .github-tray-repo-lang-dot {
+    font-size: 9px;
+}
+
+.github-tray-font-large .github-tray-repo-lang-dot {
+    font-size: 10px;
 }
 
 .github-tray-repo-lang-text {
@@ -701,7 +797,7 @@
 
 .github-tray-notification-item {
     padding: 0;
-    margin: 0 4px;
+    margin: 0;
 }
 
 .github-tray-notification-item:hover {
@@ -713,7 +809,7 @@
     border-radius: 8px;
     background-color: rgba(13, 17, 23, 0.6);
     border: 1px solid rgba(48, 54, 61, 0.6);
-    margin: 2px 4px;
+    margin: 1px 4px;
 }
 
 .github-tray-notification-item:hover .github-tray-notification-box {
@@ -765,4 +861,68 @@
 .github-tray-mark-read-btn:hover {
     background-color: rgba(35, 134, 54, 0.3);
     border: 1px solid rgba(46, 160, 67, 0.5);
+}
+
+/* ── Accordion ────────────────────────────────────────────────── */
+
+.github-tray-accordion-header {
+    padding: 0;
+    margin: 0 4px;
+    border-radius: 8px;
+}
+
+.github-tray-accordion-header-box {
+    padding: 10px 12px;
+    spacing: 8px;
+}
+
+.github-tray-accordion-toggle {
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    border-radius: 6px;
+}
+
+.github-tray-accordion-toggle:hover {
+    background-color: rgba(48, 54, 61, 0.4);
+}
+
+.github-tray-accordion-arrow {
+    font-size: 10px;
+    color: #6e7681;
+    min-width: 16px;
+}
+
+.github-tray-accordion-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #c9d1d9;
+}
+
+.github-tray-accordion-count {
+    font-size: 11px;
+    font-weight: 500;
+    color: #6e7681;
+}
+
+.github-tray-accordion-icon {
+    color: #8b949e;
+    margin-right: 4px;
+}
+
+.github-tray-accordion-action-btn {
+    font-size: 11px;
+    font-weight: 500;
+    color: #58a6ff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background-color: rgba(56, 139, 253, 0.15);
+}
+
+.github-tray-accordion-action-btn:hover {
+    background-color: rgba(56, 139, 253, 0.25);
+}
+
+.github-tray-accordion-action-btn:focus {
+    background-color: rgba(56, 139, 253, 0.3);
 }
