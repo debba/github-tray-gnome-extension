@@ -167,7 +167,7 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
     // Panel position
     const panelRow = new Adw.ComboRow({
       title: _("Panel position"),
-      subtitle: _("Where the icon appears in the top bar"),
+      subtitle: _("Where the icon appears in the top bar (requires restart)"),
       model: Gtk.StringList.new([_("Left"), _("Center"), _("Right")]),
     });
 

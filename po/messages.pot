@@ -1,0 +1,453 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-17 16:15+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: prefs.js:25 extension.js:153
+msgid "GitHub Tray"
+msgstr ""
+
+#: prefs.js:31
+msgid "Welcome"
+msgstr ""
+
+#: prefs.js:35
+msgid "Thank you for using GitHub Tray!"
+msgstr ""
+
+#: prefs.js:37
+msgid ""
+"Join our Discord community or leave a star on GitHub to support the project"
+msgstr ""
+
+#: prefs.js:46
+msgid "Join Discord"
+msgstr ""
+
+#: prefs.js:66
+msgid "Star on GitHub"
+msgstr ""
+
+#: prefs.js:83
+msgid "Authentication"
+msgstr ""
+
+#: prefs.js:85
+msgid ""
+"Create a token at github.com/settings/tokens\n"
+"Required scopes: repo (private) or public_repo (public only)"
+msgstr ""
+
+#: prefs.js:91
+msgid "GitHub Username"
+msgstr ""
+
+#: prefs.js:102
+msgid "Personal Access Token"
+msgstr ""
+
+#: prefs.js:115
+msgid "Sorting"
+msgstr ""
+
+#: prefs.js:116
+msgid "Configure how repositories are sorted"
+msgstr ""
+
+#: prefs.js:121
+msgid "Sort by"
+msgstr ""
+
+#: prefs.js:122
+msgid "Criteria for sorting repositories"
+msgstr ""
+
+#: prefs.js:124
+msgid "Last Updated"
+msgstr ""
+
+#: prefs.js:125
+msgid "Last Pushed"
+msgstr ""
+
+#: prefs.js:126
+msgid "Created Date"
+msgstr ""
+
+#: prefs.js:127
+msgid "Stars"
+msgstr ""
+
+#: prefs.js:128
+msgid "Name"
+msgstr ""
+
+#: prefs.js:144
+msgid "Sort order"
+msgstr ""
+
+#: prefs.js:145
+msgid "Ascending or descending order"
+msgstr ""
+
+#: prefs.js:146
+msgid "Descending"
+msgstr ""
+
+#: prefs.js:146
+msgid "Ascending"
+msgstr ""
+
+#: prefs.js:163
+msgid "Display"
+msgstr ""
+
+#: prefs.js:164
+msgid "Configure how repositories are shown"
+msgstr ""
+
+#: prefs.js:169
+msgid "Panel position"
+msgstr ""
+
+#: prefs.js:170
+msgid "Where the icon appears in the top bar"
+msgstr ""
+
+#: prefs.js:171
+msgid "Left"
+msgstr ""
+
+#: prefs.js:171
+msgid "Center"
+msgstr ""
+
+#: prefs.js:171
+msgid "Right"
+msgstr ""
+
+#: prefs.js:186
+msgid "Max repositories"
+msgstr ""
+
+#: prefs.js:187
+msgid "Maximum number of repositories to display"
+msgstr ""
+
+#: prefs.js:202
+msgid "Font Size"
+msgstr ""
+
+#: prefs.js:203
+msgid "Adjust the size of text in the menu"
+msgstr ""
+
+#: prefs.js:204
+msgid "Small"
+msgstr ""
+
+#: prefs.js:204
+msgid "Medium"
+msgstr ""
+
+#: prefs.js:204
+msgid "Large"
+msgstr ""
+
+#: prefs.js:221
+msgid "Local Projects"
+msgstr ""
+
+#: prefs.js:222
+msgid "Configure local editor for opening projects"
+msgstr ""
+
+#: prefs.js:227
+msgid "Editor Command"
+msgstr ""
+
+#: prefs.js:240
+msgid "Notifications"
+msgstr ""
+
+#: prefs.js:241
+msgid "Configure GitHub notifications display"
+msgstr ""
+
+#: prefs.js:246
+msgid "Show GitHub Notifications"
+msgstr ""
+
+#: prefs.js:247
+msgid "Display GitHub notifications in the menu"
+msgstr ""
+
+#: prefs.js:257
+msgid "Desktop Notifications"
+msgstr ""
+
+#: prefs.js:258
+msgid "Show desktop notifications for new GitHub notifications"
+msgstr ""
+
+#: prefs.js:268
+msgid "Refresh Interval"
+msgstr ""
+
+#: prefs.js:269
+msgid "Seconds between notification checks"
+msgstr ""
+
+#: prefs.js:286
+msgid "Notification Types"
+msgstr ""
+
+#: prefs.js:287
+msgid "Choose which notification types to show"
+msgstr ""
+
+#: prefs.js:292
+msgid "Review Requests"
+msgstr ""
+
+#: prefs.js:293
+msgid "When someone requests your review on a PR"
+msgstr ""
+
+#: prefs.js:303
+msgid "Mentions"
+msgstr ""
+
+#: prefs.js:304
+msgid "When someone mentions you"
+msgstr ""
+
+#: prefs.js:314
+msgid "Assignments"
+msgstr ""
+
+#: prefs.js:315
+msgid "When you are assigned to an issue or PR"
+msgstr ""
+
+#: prefs.js:325
+msgid "Pull Request Comments"
+msgstr ""
+
+#: prefs.js:326
+msgid "Comments on pull requests"
+msgstr ""
+
+#: prefs.js:336
+msgid "Issue Comments"
+msgstr ""
+
+#: prefs.js:337
+msgid "Comments on issues"
+msgstr ""
+
+#: prefs.js:349
+msgid "GitHub Actions"
+msgstr ""
+
+#: prefs.js:350
+msgid ""
+"Configure workflow runs display. Click the workflow icon on any repository "
+"to view its workflow runs."
+msgstr ""
+
+#: prefs.js:355
+msgid "Max Workflow Runs"
+msgstr ""
+
+#: prefs.js:356
+msgid "Maximum number of workflow runs to display per repository"
+msgstr ""
+
+#: prefs.js:373
+msgid "Workflow Notifications"
+msgstr ""
+
+#: prefs.js:374
+msgid ""
+"Choose which workflow events to notify about. Notifications are only sent "
+"for repositories with a configured local path."
+msgstr ""
+
+#: prefs.js:379
+msgid "Workflow Started"
+msgstr ""
+
+#: prefs.js:380
+msgid "When a workflow run starts"
+msgstr ""
+
+#: prefs.js:390
+msgid "Workflow Succeeded"
+msgstr ""
+
+#: prefs.js:391
+msgid "When a workflow run completes successfully"
+msgstr ""
+
+#: prefs.js:401
+msgid "Workflow Failed"
+msgstr ""
+
+#: prefs.js:402
+msgid "When a workflow run fails"
+msgstr ""
+
+#: prefs.js:412
+msgid "Workflow Cancelled"
+msgstr ""
+
+#: prefs.js:413
+msgid "When a workflow run is cancelled"
+msgstr ""
+
+#: prefs.js:425
+msgid "Repository Path Mappings"
+msgstr ""
+
+#: prefs.js:426
+msgid "Manage local paths for your repositories"
+msgstr ""
+
+#: prefs.js:434
+msgid "Add New Mapping"
+msgstr ""
+
+#: prefs.js:450
+msgid "Debug"
+msgstr ""
+
+#: prefs.js:451
+msgid "Enable debug features for testing"
+msgstr ""
+
+#: prefs.js:456
+msgid "Debug Mode"
+msgstr ""
+
+#: prefs.js:457
+msgid "Show debug button in menu to test notifications"
+msgstr ""
+
+#: prefs.js:492
+msgid "No mappings configured"
+msgstr ""
+
+#: prefs.js:493
+msgid "Click \"Add New Mapping\" to set up local paths"
+msgstr ""
+
+#: prefs.js:526
+msgid "Add Repository Mapping"
+msgstr ""
+
+#: prefs.js:537 prefs.js:588
+msgid "Cancel"
+msgstr ""
+
+#: prefs.js:545
+msgid "Add"
+msgstr ""
+
+#: prefs.js:565
+msgid "Repository (owner/name)"
+msgstr ""
+
+#: prefs.js:572
+msgid "Local Path"
+msgstr ""
+
+#: prefs.js:579
+msgid "Browse..."
+msgstr ""
+
+#: prefs.js:583
+msgid "Select Repository Path"
+msgstr ""
+
+#: prefs.js:589
+msgid "Select"
+msgstr ""
+
+#: extension.js:110
+msgid "Configure token and username in Settings"
+msgstr ""
+
+#: extension.js:118
+msgid "Loading repositories..."
+msgstr ""
+
+#: extension.js:151
+msgid "Error loading repositories"
+msgstr ""
+
+#: extension.js:154
+#, javascript-format
+msgid "Failed to fetch repositories: %s"
+msgstr ""
+
+#: extension.js:270
+msgid "New Stars!"
+msgstr ""
+
+#: extension.js:280
+msgid "New Issues Opened"
+msgstr ""
+
+#: extension.js:290
+msgid "New Forks Created"
+msgstr ""
+
+#: extension.js:302
+msgid "New Followers"
+msgstr ""
+
+#: extension.js:318
+msgid "GitHub Actions: Workflow Started"
+msgstr ""
+
+#: extension.js:332
+msgid "GitHub Actions: Workflow Succeeded"
+msgstr ""
+
+#: extension.js:341
+msgid "GitHub Actions: Workflow Failed"
+msgstr ""
+
+#: extension.js:350
+msgid "GitHub Actions: Workflow Cancelled"
+msgstr ""
+
+#: extension.js:577
+msgid "GitHub Notifications"
+msgstr ""
+
+#: extension.js:578
+#, javascript-format
+msgid "%d new notification"
+msgid_plural "%d new notifications"
+msgstr[0] ""
+msgstr[1] ""
+
+#: extension.js:729
+msgid "Waiting for network connection..."
+msgstr ""

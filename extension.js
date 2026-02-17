@@ -68,7 +68,11 @@ export default class GitHubTrayExtension extends Extension {
     this._indicator.add_child(iconBox);
 
     // Build UI
-    this._ui = new GitHubTrayUI(this._indicator, this._settings, this._httpSession);
+    this._ui = new GitHubTrayUI(
+      this._indicator,
+      this._settings,
+      this._httpSession,
+    );
     this._ui.setBadgeWidget(null); // this._badge);
     const { debugBtn } = this._ui.buildMenu(
       () => this._loadRepositories(true),
@@ -78,7 +82,8 @@ export default class GitHubTrayExtension extends Extension {
       },
       () => this._onDebugClick(),
       (repo, callback) => this._fetchRepoIssues(repo, callback),
-      (notification, callback) => this._markNotificationRead(notification, callback),
+      (notification, callback) =>
+        this._markNotificationRead(notification, callback),
       (workflowRun, callback) => this._rerunWorkflow(workflowRun, callback),
       (repo, callback) => this._fetchRepoWorkflowRuns(repo, callback),
     );
@@ -189,12 +194,24 @@ export default class GitHubTrayExtension extends Extension {
       const api = new GitHubApi(this._httpSession);
       const [owner, repoName] = repo.full_name.split("/");
       const maxRuns = this._settings.get_int("workflow-runs-max-display") || 10;
-      console.log(`[GitHubTray] Fetching workflow runs for ${owner}/${repoName} (max: ${maxRuns})`);
-      const workflowRuns = await api.fetchRepoWorkflowRuns(token, owner, repoName, maxRuns);
-      console.log(`[GitHubTray] Fetched ${workflowRuns ? workflowRuns.length : 0} workflow runs for ${repo.full_name}`);
+      console.log(
+        `[GitHubTray] Fetching workflow runs for ${owner}/${repoName} (max: ${maxRuns})`,
+      );
+      const workflowRuns = await api.fetchRepoWorkflowRuns(
+        token,
+        owner,
+        repoName,
+        maxRuns,
+      );
+      console.log(
+        `[GitHubTray] Fetched ${workflowRuns ? workflowRuns.length : 0} workflow runs for ${repo.full_name}`,
+      );
       callback(workflowRuns);
     } catch (error) {
-      console.error(`[GitHubTray] Error fetching workflow runs for ${repo.full_name}:`, error);
+      console.error(
+        `[GitHubTray] Error fetching workflow runs for ${repo.full_name}:`,
+        error,
+      );
       callback([]);
     }
   }
@@ -211,7 +228,9 @@ export default class GitHubTrayExtension extends Extension {
 
   _getMonitoredRepos() {
     if (!this._lastRepos) return [];
-    return this._lastRepos.filter(repo => this._getLocalPath(repo.full_name) !== null);
+    return this._lastRepos.filter(
+      (repo) => this._getLocalPath(repo.full_name) !== null,
+    );
   }
 
   _handleRepoUpdate(repos, username, userInfo, wasOpen, manualRefresh) {
@@ -335,7 +354,10 @@ export default class GitHubTrayExtension extends Extension {
           }
         }
         // Failed
-        else if (newRun.status === "completed" && newRun.conclusion === "failure") {
+        else if (
+          newRun.status === "completed" &&
+          newRun.conclusion === "failure"
+        ) {
           if (this._settings.get_boolean("notify-workflow-failure")) {
             this._sendNotification(
               _("GitHub Actions: Workflow Failed"),
@@ -344,7 +366,10 @@ export default class GitHubTrayExtension extends Extension {
           }
         }
         // Cancelled
-        else if (newRun.status === "completed" && newRun.conclusion === "cancelled") {
+        else if (
+          newRun.status === "completed" &&
+          newRun.conclusion === "cancelled"
+        ) {
           if (this._settings.get_boolean("notify-workflow-cancelled")) {
             this._sendNotification(
               _("GitHub Actions: Workflow Cancelled"),
@@ -457,9 +482,15 @@ export default class GitHubTrayExtension extends Extension {
           if (!this._indicator) return GLib.SOURCE_REMOVE;
 
           if (this._pendingUpdate) {
-            const { repos, username, userInfo, notifications } = this._pendingUpdate;
+            const { repos, username, userInfo, notifications } =
+              this._pendingUpdate;
             this._pendingUpdate = null;
-            this._ui.updateMenu(repos, username, userInfo, notifications || this._lastNotifications || []);
+            this._ui.updateMenu(
+              repos,
+              username,
+              userInfo,
+              notifications || this._lastNotifications || [],
+            );
           }
 
           if (this._pendingDetectChanges) {
@@ -529,15 +560,22 @@ export default class GitHubTrayExtension extends Extension {
     const monitoredRepos = this._getMonitoredRepos();
     if (monitoredRepos.length === 0) return;
 
-    console.log(`[GitHubTray] Loading workflow runs for ${monitoredRepos.length} monitored repos`);
+    console.log(
+      `[GitHubTray] Loading workflow runs for ${monitoredRepos.length} monitored repos`,
+    );
 
     const api = new GitHubApi(this._httpSession);
-    
+
     for (const repo of monitoredRepos) {
       try {
         const [owner, repoName] = repo.full_name.split("/");
-        const workflowRuns = await api.fetchRepoWorkflowRuns(token, owner, repoName, 5);
-        
+        const workflowRuns = await api.fetchRepoWorkflowRuns(
+          token,
+          owner,
+          repoName,
+          5,
+        );
+
         const oldRuns = this._monitoredWorkflowRuns.get(repo.full_name) || [];
         this._monitoredWorkflowRuns.set(repo.full_name, workflowRuns);
 
@@ -546,7 +584,10 @@ export default class GitHubTrayExtension extends Extension {
           this._detectWorkflowChanges(workflowRuns, oldRuns, repo);
         }
       } catch (error) {
-        console.error(`[GitHubTray] Error loading workflow runs for ${repo.full_name}:`, error);
+        console.error(
+          `[GitHubTray] Error loading workflow runs for ${repo.full_name}:`,
+          error,
+        );
       }
     }
   }
@@ -570,17 +611,28 @@ export default class GitHubTrayExtension extends Extension {
         this._ui.updateBadge(unreadCount);
       }
 
-      if (unreadCount > oldUnreadCount && this._settings.get_boolean("desktop-notifications")) {
+      if (
+        unreadCount > oldUnreadCount &&
+        this._settings.get_boolean("desktop-notifications")
+      ) {
         const newCount = unreadCount - oldUnreadCount;
         if (newCount > 0) {
           this._sendNotification(
             _("GitHub Notifications"),
-            _("%d new notification%s").format(newCount, newCount > 1 ? "s" : ""),
+            ngettext(
+              "%d new notification",
+              "%d new notifications",
+              newCount,
+            ).format(newCount),
           );
         }
       }
 
-      if (this._pendingUpdate && this._indicator && !this._indicator.menu.isOpen) {
+      if (
+        this._pendingUpdate &&
+        this._indicator &&
+        !this._indicator.menu.isOpen
+      ) {
         const { repos, username, userInfo } = this._pendingUpdate;
         this._pendingUpdate = null;
         this._ui.updateMenu(repos, username, userInfo, notifications);
@@ -604,7 +656,11 @@ export default class GitHubTrayExtension extends Extension {
       if (reason === "assign") {
         return this._settings.get_boolean("notify-assignments");
       }
-      if (type === "PullRequest" || type === "PullRequestReview" || type === "PullRequestReviewComment") {
+      if (
+        type === "PullRequest" ||
+        type === "PullRequestReview" ||
+        type === "PullRequestReviewComment"
+      ) {
         return this._settings.get_boolean("notify-pr-comments");
       }
       if (type === "Issue" || type === "IssueComment") {
@@ -625,7 +681,9 @@ export default class GitHubTrayExtension extends Extension {
       const api = new GitHubApi(this._httpSession);
       await api.markNotificationRead(token, notification.id);
 
-      this._lastNotifications = this._lastNotifications.filter((n) => n.id !== notification.id);
+      this._lastNotifications = this._lastNotifications.filter(
+        (n) => n.id !== notification.id,
+      );
       this._unreadCount = Math.max(0, this._unreadCount - 1);
       this._ui.updateBadge(this._unreadCount);
 
@@ -671,6 +729,12 @@ export default class GitHubTrayExtension extends Extension {
           return;
         }
 
+        // Handle panel position change
+        if (key === "panel-box") {
+          this._updatePanelPosition();
+          return;
+        }
+
         if (
           ![
             "github-token",
@@ -697,6 +761,20 @@ export default class GitHubTrayExtension extends Extension {
         );
       },
     );
+  }
+
+  _updatePanelPosition() {
+    if (!this._indicator) return;
+
+    // Remove from current position
+    const container = this._indicator.get_parent();
+    if (container) {
+      container.remove_child(this._indicator);
+    }
+
+    // Add to new position
+    const panelBox = this._settings.get_string("panel-box") || "right";
+    Main.panel.addToStatusArea("github-tray", this._indicator, 0, panelBox);
   }
 
   // Network

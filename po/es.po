@@ -1,0 +1,386 @@
+# Spanish translation for GitHub Tray GNOME Extension
+# Copyright (C) 2025
+# This file is distributed under the same license as the github-tray package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: github-tray 2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-17 00:00+0000\n"
+"PO-Revision-Date: 2026-02-17 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# extension.js
+msgid "Refresh"
+msgstr "Actualizar"
+
+msgid "Settings"
+msgstr "Configuración"
+
+msgid "Configure token and username in Settings"
+msgstr "Configurar token y nombre de usuario en Configuración"
+
+msgid "Loading repositories..."
+msgstr "Cargando repositorios..."
+
+msgid "Error loading repositories"
+msgstr "Error al cargar repositorios"
+
+msgid "GitHub Tray"
+msgstr "GitHub Tray"
+
+msgid "Welcome"
+msgstr "Bienvenido"
+
+msgid "Thank you for using GitHub Tray!"
+msgstr "¡Gracias por usar GitHub Tray!"
+
+msgid "Join our Discord community or leave a star on GitHub to support the project"
+msgstr "Únete a nuestra comunidad de Discord o deja una estrella en GitHub para apoyar el proyecto"
+
+msgid "Join Discord"
+msgstr "Únete a Discord"
+
+msgid "Star on GitHub"
+msgstr "Estrella en GitHub"
+
+msgid "Failed to fetch repositories: %s"
+msgstr "Error al obtener repositorios: %s"
+
+msgid "New Stars!"
+msgstr "¡Nuevas Estrellas!"
+
+msgid "New Issues Opened"
+msgstr "Nuevos Issues Abiertos"
+
+msgid "New Forks Created"
+msgstr "Nuevos Forks Creados"
+
+msgid "New Followers"
+msgstr "Nuevos Seguidores"
+
+msgid "GitHub Actions: Workflow Started"
+msgstr "GitHub Actions: Workflow Iniciado"
+
+msgid "GitHub Actions: Workflow Succeeded"
+msgstr "GitHub Actions: Workflow Completado"
+
+msgid "GitHub Actions: Workflow Failed"
+msgstr "GitHub Actions: Workflow Fallido"
+
+msgid "GitHub Actions: Workflow Cancelled"
+msgstr "GitHub Actions: Workflow Cancelado"
+
+msgid "GitHub Notifications"
+msgstr "Notificaciones de GitHub"
+
+msgid "%d new notification"
+msgid_plural "%d new notifications"
+msgstr[0] "%d nueva notificación"
+msgstr[1] "%d nuevas notificaciones"
+
+msgid "Waiting for network connection..."
+msgstr "Esperando conexión de red..."
+
+msgid "No repositories found"
+msgstr "No se encontraron repositorios"
+
+msgid "just now"
+msgstr "ahora"
+
+msgid "%d min ago"
+msgstr "hace %d min"
+
+msgid "%d h ago"
+msgstr "hace %d h"
+
+msgid "%d d ago"
+msgstr "hace %d d"
+
+msgid "%d mo ago"
+msgstr "hace %d meses"
+
+# prefs.js
+msgid "Authentication"
+msgstr "Autenticación"
+
+msgid "Create a token at github.com/settings/tokens\nRequired scopes: repo (private) or public_repo (public only)"
+msgstr "Crear un token en github.com/settings/tokens\nÁmbitos requeridos: repo (privado) o public_repo (solo público)"
+
+msgid "GitHub Username"
+msgstr "Usuario de GitHub"
+
+msgid "Personal Access Token"
+msgstr "Token de Acceso Personal"
+
+msgid "Sorting"
+msgstr "Ordenamiento"
+
+msgid "Configure how repositories are sorted"
+msgstr "Configurar cómo se ordenan los repositorios"
+
+msgid "Sort by"
+msgstr "Ordenar por"
+
+msgid "Criteria for sorting repositories"
+msgstr "Criterio para ordenar repositorios"
+
+msgid "Last Updated"
+msgstr "Última Actualización"
+
+msgid "Last Pushed"
+msgstr "Último Push"
+
+msgid "Created Date"
+msgstr "Fecha de Creación"
+
+msgid "Stars"
+msgstr "Estrellas"
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Sort order"
+msgstr "Orden"
+
+msgid "Ascending or descending order"
+msgstr "Orden ascendente o descendente"
+
+msgid "Descending"
+msgstr "Descendente"
+
+msgid "Ascending"
+msgstr "Ascendente"
+
+msgid "Display"
+msgstr "Visualización"
+
+msgid "Configure how repositories are shown"
+msgstr "Configurar cómo se muestran los repositorios"
+
+msgid "Panel position"
+msgstr "Posición del panel"
+
+msgid "Where the icon appears in the top bar"
+msgstr "Donde aparece el icono en la barra superior"
+
+msgid "Where the icon appears in the top bar (requires restart)"
+msgstr "Donde aparece el icono en la barra superior (requiere reiniciar)"
+
+msgid "Left"
+msgstr "Izquierda"
+
+msgid "Center"
+msgstr "Centro"
+
+msgid "Right"
+msgstr "Derecha"
+
+msgid "Max repositories"
+msgstr "Repositorios máximos"
+
+msgid "Maximum number of repositories to display"
+msgstr "Número máximo de repositorios a mostrar"
+
+msgid "Font Size"
+msgstr "Tamaño de Fuente"
+
+msgid "Adjust the size of text in the menu"
+msgstr "Ajustar el tamaño del texto en el menú"
+
+msgid "Small"
+msgstr "Pequeño"
+
+msgid "Medium"
+msgstr "Mediano"
+
+msgid "Large"
+msgstr "Grande"
+
+msgid "Local Projects"
+msgstr "Proyectos Locales"
+
+msgid "Configure local editor for opening projects"
+msgstr "Configurar editor local para abrir proyectos"
+
+msgid "Editor Command"
+msgstr "Comando del Editor"
+
+msgid "Notifications"
+msgstr "Notificaciones"
+
+msgid "Configure GitHub notifications display"
+msgstr "Configurar visualización de notificaciones de GitHub"
+
+msgid "Show GitHub Notifications"
+msgstr "Mostrar Notificaciones de GitHub"
+
+msgid "Display GitHub notifications in the menu"
+msgstr "Mostrar notificaciones de GitHub en el menú"
+
+msgid "Desktop Notifications"
+msgstr "Notificaciones de Escritorio"
+
+msgid "Show desktop notifications for new GitHub notifications"
+msgstr "Mostrar notificaciones de escritorio para nuevas notificaciones de GitHub"
+
+msgid "Refresh Interval"
+msgstr "Intervalo de Actualización"
+
+msgid "Seconds between notification checks"
+msgstr "Segundos entre comprobaciones de notificaciones"
+
+msgid "Notification Types"
+msgstr "Tipos de Notificaciones"
+
+msgid "Choose which notification types to show"
+msgstr "Elegir qué tipos de notificaciones mostrar"
+
+msgid "Review Requests"
+msgstr "Solicitudes de Revisión"
+
+msgid "When someone requests your review on a PR"
+msgstr "Cuando alguien solicita tu revisión en un PR"
+
+msgid "Mentions"
+msgstr "Menciones"
+
+msgid "When someone mentions you"
+msgstr "Cuando alguien te menciona"
+
+msgid "Assignments"
+msgstr "Asignaciones"
+
+msgid "When you are assigned to an issue or PR"
+msgstr "Cuando te asignan a un issue o PR"
+
+msgid "Pull Request Comments"
+msgstr "Comentarios de Pull Request"
+
+msgid "Comments on pull requests"
+msgstr "Comentarios en pull requests"
+
+msgid "Issue Comments"
+msgstr "Comentarios de Issue"
+
+msgid "Comments on issues"
+msgstr "Comentarios en issues"
+
+msgid "GitHub Actions"
+msgstr "GitHub Actions"
+
+msgid "Configure workflow runs display. Click the workflow icon on any repository to view its workflow runs."
+msgstr "Configurar visualización de ejecuciones de workflow. Haz clic en el icono de workflow en cualquier repositorio para ver sus ejecuciones."
+
+msgid "Max Workflow Runs"
+msgstr "Ejecuciones de Workflow Máximas"
+
+msgid "Maximum number of workflow runs to display per repository"
+msgstr "Número máximo de ejecuciones de workflow a mostrar por repositorio"
+
+msgid "Workflow Notifications"
+msgstr "Notificaciones de Workflow"
+
+msgid "Choose which workflow events to notify about. Notifications are only sent for repositories with a configured local path."
+msgstr "Elegir sobre qué eventos de workflow notificar. Las notificaciones solo se envían para repositorios con una ruta local configurada."
+
+msgid "Workflow Started"
+msgstr "Workflow Iniciado"
+
+msgid "When a workflow run starts"
+msgstr "Cuando una ejecución de workflow comienza"
+
+msgid "Workflow Succeeded"
+msgstr "Workflow Completado"
+
+msgid "When a workflow run completes successfully"
+msgstr "Cuando una ejecución de workflow se completa exitosamente"
+
+msgid "Workflow Failed"
+msgstr "Workflow Fallido"
+
+msgid "When a workflow run fails"
+msgstr "Cuando una ejecución de workflow falla"
+
+msgid "Workflow Cancelled"
+msgstr "Workflow Cancelado"
+
+msgid "When a workflow run is cancelled"
+msgstr "Cuando una ejecución de workflow es cancelada"
+
+msgid "Repository Path Mappings"
+msgstr "Mapeos de Ruta de Repositorio"
+
+msgid "Manage local paths for your repositories"
+msgstr "Administrar rutas locales para tus repositorios"
+
+msgid "Add New Mapping"
+msgstr "Agregar Nueva Asignación"
+
+msgid "No mappings configured"
+msgstr "No hay asignaciones configuradas"
+
+msgid "Click \"Add New Mapping\" to set up local paths"
+msgstr "Haz clic en \"Agregar Nueva Asignación\" para configurar rutas locales"
+
+msgid "Add Repository Mapping"
+msgstr "Agregar Asignación de Repositorio"
+
+msgid "Repository (owner/name):"
+msgstr "Repositorio (propietario/nombre):"
+
+msgid "Repository (owner/name)"
+msgstr "Repositorio (propietario/nombre)"
+
+msgid "Local Path:"
+msgstr "Ruta Local:"
+
+msgid "Local Path"
+msgstr "Ruta Local"
+
+msgid "Browse..."
+msgstr "Explorar..."
+
+msgid "Select Repository Path"
+msgstr "Seleccionar Ruta del Repositorio"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Select"
+msgstr "Seleccionar"
+
+msgid "Add"
+msgstr "Agregar"
+
+msgid "Debug"
+msgstr "Depuración"
+
+msgid "Enable debug features for testing"
+msgstr "Habilitar funciones de depuración para pruebas"
+
+msgid "Debug Mode"
+msgstr "Modo de Depuración"
+
+msgid "Show debug button in menu to test notifications"
+msgstr "Mostrar botón de depuración en el menú para probar notificaciones"
+
+msgid "🔀 parent"
+msgstr "🔀 padre"
+
+msgid "Updated %s"
+msgstr "Actualizado %s"
+
+msgid "Open in Browser"
+msgstr "Abrir en Navegador"
+
+msgid "Open Locally"
+msgstr "Abrir Localmente"
+
+msgid "Copy URL"
+msgstr "Copiar URL"

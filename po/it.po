@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: github-tray 2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-01 00:00+0000\n"
-"PO-Revision-Date: 2025-01-01 00:00+0000\n"
+"POT-Creation-Date: 2026-02-17 00:00+0000\n"
+"PO-Revision-Date: 2026-02-17 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -63,6 +63,26 @@ msgstr "Nuovi Fork Creati"
 
 msgid "New Followers"
 msgstr "Nuovi Follower"
+
+msgid "GitHub Actions: Workflow Started"
+msgstr "GitHub Actions: Workflow Avviato"
+
+msgid "GitHub Actions: Workflow Succeeded"
+msgstr "GitHub Actions: Workflow Completato"
+
+msgid "GitHub Actions: Workflow Failed"
+msgstr "GitHub Actions: Workflow Fallito"
+
+msgid "GitHub Actions: Workflow Cancelled"
+msgstr "GitHub Actions: Workflow Annullato"
+
+msgid "GitHub Notifications"
+msgstr "Notifiche GitHub"
+
+msgid "%d new notification"
+msgid_plural "%d new notifications"
+msgstr[0] "%d nuova notifica"
+msgstr[1] "%d nuove notifiche"
 
 msgid "Waiting for network connection..."
 msgstr "In attesa della connessione di rete..."
@@ -149,6 +169,9 @@ msgstr "Posizione nella barra"
 msgid "Where the icon appears in the top bar"
 msgstr "Dove appare l'icona nella barra superiore"
 
+msgid "Where the icon appears in the top bar (requires restart)"
+msgstr "Dove appare l'icona nella barra superiore (richiede riavvio)"
+
 msgid "Left"
 msgstr "Sinistra"
 
@@ -164,6 +187,21 @@ msgstr "Repository massimi"
 msgid "Maximum number of repositories to display"
 msgstr "Numero massimo di repository da visualizzare"
 
+msgid "Font Size"
+msgstr "Dimensione Font"
+
+msgid "Adjust the size of text in the menu"
+msgstr "Regola la dimensione del testo nel menu"
+
+msgid "Small"
+msgstr "Piccolo"
+
+msgid "Medium"
+msgstr "Medio"
+
+msgid "Large"
+msgstr "Grande"
+
 msgid "Local Projects"
 msgstr "Progetti Locali"
 
@@ -172,6 +210,108 @@ msgstr "Configura l'editor locale per aprire i progetti"
 
 msgid "Editor Command"
 msgstr "Comando Editor"
+
+msgid "Notifications"
+msgstr "Notifiche"
+
+msgid "Configure GitHub notifications display"
+msgstr "Configura la visualizzazione delle notifiche GitHub"
+
+msgid "Show GitHub Notifications"
+msgstr "Mostra Notifiche GitHub"
+
+msgid "Display GitHub notifications in the menu"
+msgstr "Visualizza le notifiche GitHub nel menu"
+
+msgid "Desktop Notifications"
+msgstr "Notifiche Desktop"
+
+msgid "Show desktop notifications for new GitHub notifications"
+msgstr "Mostra notifiche desktop per le nuove notifiche GitHub"
+
+msgid "Refresh Interval"
+msgstr "Intervallo di Aggiornamento"
+
+msgid "Seconds between notification checks"
+msgstr "Secondi tra i controlli delle notifiche"
+
+msgid "Notification Types"
+msgstr "Tipi di Notifiche"
+
+msgid "Choose which notification types to show"
+msgstr "Scegli quali tipi di notifiche mostrare"
+
+msgid "Review Requests"
+msgstr "Richieste di Revisione"
+
+msgid "When someone requests your review on a PR"
+msgstr "Quando qualcuno richiede la tua revisione su una PR"
+
+msgid "Mentions"
+msgstr "Menzioni"
+
+msgid "When someone mentions you"
+msgstr "Quando qualcuno ti menziona"
+
+msgid "Assignments"
+msgstr "Assegnazioni"
+
+msgid "When you are assigned to an issue or PR"
+msgstr "Quando vieni assegnato a un'issue o PR"
+
+msgid "Pull Request Comments"
+msgstr "Commenti Pull Request"
+
+msgid "Comments on pull requests"
+msgstr "Commenti sulle pull request"
+
+msgid "Issue Comments"
+msgstr "Commenti Issue"
+
+msgid "Comments on issues"
+msgstr "Commenti sulle issue"
+
+msgid "GitHub Actions"
+msgstr "GitHub Actions"
+
+msgid "Configure workflow runs display. Click the workflow icon on any repository to view its workflow runs."
+msgstr "Configura la visualizzazione delle esecuzioni dei workflow. Clicca sull'icona workflow su qualsiasi repository per visualizzarne le esecuzioni."
+
+msgid "Max Workflow Runs"
+msgstr "Esecuzioni Workflow Massime"
+
+msgid "Maximum number of workflow runs to display per repository"
+msgstr "Numero massimo di esecuzioni workflow da visualizzare per repository"
+
+msgid "Workflow Notifications"
+msgstr "Notifiche Workflow"
+
+msgid "Choose which workflow events to notify about. Notifications are only sent for repositories with a configured local path."
+msgstr "Scegli per quali eventi workflow ricevere notifiche. Le notifiche vengono inviate solo per i repository con un percorso locale configurato."
+
+msgid "Workflow Started"
+msgstr "Workflow Avviato"
+
+msgid "When a workflow run starts"
+msgstr "Quando un'esecuzione workflow inizia"
+
+msgid "Workflow Succeeded"
+msgstr "Workflow Completato"
+
+msgid "When a workflow run completes successfully"
+msgstr "Quando un'esecuzione workflow si completa con successo"
+
+msgid "Workflow Failed"
+msgstr "Workflow Fallito"
+
+msgid "When a workflow run fails"
+msgstr "Quando un'esecuzione workflow fallisce"
+
+msgid "Workflow Cancelled"
+msgstr "Workflow Annullato"
+
+msgid "When a workflow run is cancelled"
+msgstr "Quando un'esecuzione workflow viene annullata"
 
 msgid "Repository Path Mappings"
 msgstr "Mappature Percorsi Repository"
