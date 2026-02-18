@@ -246,7 +246,7 @@
 /* ── Menu container ─────────────────────────────────────────── */
 
 .github-tray-menu {
-    max-width: 380px;
+    max-width: 340px;
 }
 
 .github-tray-menu-box {
@@ -470,15 +470,15 @@
     padding: 2px 8px;
     font-size: 9px;
     font-weight: 500;
-    background-color: rgba(88, 166, 255, 0.08);
+    background-color: rgba(88, 166, 255, 0.2);
     border-radius: 6px;
     color: #58a6ff;
-    border: 1px solid rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.3);
 }
 
 .github-tray-link-btn-blue:hover {
-    background-color: rgba(88, 166, 255, 0.15);
-    border: 1px solid rgba(88, 166, 255, 0.3);
+    background-color: rgba(88, 166, 255, 0.3);
+    border: 1px solid rgba(88, 166, 255, 0.5);
 }
 
 /* ── Stats row ──────────────────────────────────────────────── */
