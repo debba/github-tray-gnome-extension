@@ -14,9 +14,12 @@ translations:
 		msgfmt -o $(LOCALE_DIR)/$$lang/LC_MESSAGES/github-tray.mo $$po; \
 	done
 
+JS_FILES = extension.js githubApi.js ui.js utils.js prefs.js \
+           notificationManager.js workflowManager.js refreshManager.js changeDetector.js
+
 install: build
 	mkdir -p $(INSTALL_DIR)
-	cp -r extension.js githubApi.js ui.js utils.js prefs.js metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(INSTALL_DIR)
+	cp -r $(JS_FILES) metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(INSTALL_DIR)
 	@if [ -d $(LOCALE_DIR) ]; then cp -r $(LOCALE_DIR) $(INSTALL_DIR); fi
 	@echo "Extension installed in $(INSTALL_DIR)"
 	@echo "Restart GNOME Shell to see changes."
@@ -26,7 +29,7 @@ uninstall:
 
 pack: build
 	@rm -f $(UUID).zip
-	zip -r $(UUID).zip extension.js githubApi.js ui.js utils.js prefs.js metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(LOCALE_DIR)
+	zip -r $(UUID).zip $(JS_FILES) metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(LOCALE_DIR)
 	@echo "Package created: $(UUID).zip"
 
 clean:

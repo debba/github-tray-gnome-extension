@@ -10,7 +10,10 @@ import {
 } from "resource:///org/gnome/shell/extensions/extension.js";
 import { GitHubApi } from "./githubApi.js";
 import { GitHubTrayUI } from "./ui.js";
-import { detectChanges, detectNewFollowers } from "./utils.js";
+import { NotificationManager } from "./notificationManager.js";
+import { WorkflowManager } from "./workflowManager.js";
+import { RefreshManager } from "./refreshManager.js";
+import { ChangeDetector, sendNotification } from "./changeDetector.js";
 
 export default class GitHubTrayExtension extends Extension {
   enable() {
@@ -18,18 +21,16 @@ export default class GitHubTrayExtension extends Extension {
     this._httpSession = new Soup.Session();
     this._lastRepos = null;
     this._lastFollowers = null;
-    this._lastNotifications = [];
-    this._monitoredWorkflowRuns = new Map(); // Map<repoFullName, workflowRuns[]>
-    this._unreadCount = 0;
     this._isLoading = false;
     this._pendingUpdate = null;
-    this._detectChangesTimeoutId = null;
+    this._pendingDetectChanges = null;
 
     this._createIndicator();
+    this._initManagers();
     this._waitForNetworkAndLoad();
-    this._setupAutoRefresh();
-    this._setupNotificationRefresh();
-    this._setupMonitoredWorkflowRefresh();
+    this._refreshManager.setupAutoRefresh();
+    this._refreshManager.setupNotificationRefresh();
+    this._refreshManager.setupMonitoredWorkflowRefresh();
     this._setupSettingsListener();
   }
 
@@ -40,7 +41,10 @@ export default class GitHubTrayExtension extends Extension {
     this._cleanupState();
   }
 
-  // UI Creation
+  // -------------------------------------------------------------------------
+  // Initialization
+  // -------------------------------------------------------------------------
+
   _createIndicator() {
     this._indicator = new PanelMenu.Button(0.0, "GitHub Tray");
 
@@ -57,14 +61,6 @@ export default class GitHubTrayExtension extends Extension {
     });
     iconBox.add_child(this._icon);
 
-    // Notification badge - DISABLED (breaks top menu bar)
-    // this._badge = new St.Label({
-    //   style_class: "github-tray-badge",
-    //   text: "",
-    //   visible: false,
-    // });
-    // iconBox.add_child(this._badge);
-
     this._indicator.add_child(iconBox);
 
     // Build UI
@@ -73,11 +69,11 @@ export default class GitHubTrayExtension extends Extension {
       this._settings,
       this._httpSession,
     );
-    this._ui.setBadgeWidget(null); // this._badge);
+    this._ui.setBadgeWidget(null);
     this._ui.buildMenu(
       () => {
         this._loadRepositories(true);
-        this._loadNotifications();
+        this._notificationManager.load();
       },
       () => {
         this.openPreferences();
@@ -86,13 +82,14 @@ export default class GitHubTrayExtension extends Extension {
       () => this._onDebugClick(),
       (repo, callback) => this._fetchRepoIssues(repo, callback),
       (notification, callback) =>
-        this._markNotificationRead(notification, callback),
-      (workflowRun, callback) => this._rerunWorkflow(workflowRun, callback),
-      (repo, callback) => this._fetchRepoWorkflowRuns(repo, callback),
-      () => this._loadNotifications(),
+        this._notificationManager.markRead(notification, callback),
+      (workflowRun, callback) =>
+        this._workflowManager.rerun(workflowRun, callback),
+      (repo, callback) => this._workflowManager.fetchForRepo(repo, callback),
+      () => this._notificationManager.load(),
     );
 
-    // Menu open state handler
+    // Menu open-state handler
     this._menuOpenChangedId = this._indicator.menu.connect(
       "open-state-changed",
       (_menu, open) => {
@@ -107,7 +104,39 @@ export default class GitHubTrayExtension extends Extension {
     Main.panel.addToStatusArea("github-tray", this._indicator, 0, panelBox);
   }
 
+  _initManagers() {
+    const isMenuOpen = () =>
+      !!(this._indicator && this._indicator.menu.isOpen);
+
+    this._notificationManager = new NotificationManager({
+      httpSession: this._httpSession,
+      settings: this._settings,
+      sendNotification: (summary, body) => sendNotification(summary, body),
+      ui: this._ui,
+    });
+
+    this._workflowManager = new WorkflowManager({
+      httpSession: this._httpSession,
+      settings: this._settings,
+      sendNotification: (summary, body) => sendNotification(summary, body),
+      getMonitoredRepos: () => this._getMonitoredRepos(),
+      isMenuOpen,
+    });
+
+    this._changeDetector = new ChangeDetector({ isMenuOpen });
+
+    this._refreshManager = new RefreshManager({
+      settings: this._settings,
+      loadRepositories: () => this._loadRepositories(),
+      loadNotifications: () => this._notificationManager.load(),
+      loadMonitoredWorkflowRuns: () => this._workflowManager.loadMonitored(),
+    });
+  }
+
+  // -------------------------------------------------------------------------
   // Data Loading
+  // -------------------------------------------------------------------------
+
   async _loadRepositories(manualRefresh = false) {
     if (this._isLoading || !this._indicator) return;
 
@@ -145,13 +174,13 @@ export default class GitHubTrayExtension extends Extension {
 
       this._handleRepoUpdate(repos, username, userInfo, wasOpen, manualRefresh);
 
-      // Load workflow runs for monitored repos (first time only)
+      // Load workflow runs for monitored repos on first load
       if (!oldRepos) {
-        this._loadMonitoredWorkflowRuns();
+        this._workflowManager.loadMonitored();
       }
 
       if (oldRepos) {
-        this._scheduleChangeDetection(repos, oldRepos, followers, oldFollowers);
+        this._changeDetector.schedule(repos, oldRepos, followers, oldFollowers);
       }
     } catch (error) {
       console.error(error, "GitHubTray");
@@ -185,39 +214,9 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
-  async _fetchRepoWorkflowRuns(repo, callback) {
-    const token = this._settings?.get_string("github-token");
-    if (!token) {
-      console.log(`[GitHubTray] No token available for fetching workflow runs`);
-      callback([]);
-      return;
-    }
-
-    try {
-      const api = new GitHubApi(this._httpSession);
-      const [owner, repoName] = repo.full_name.split("/");
-      const maxRuns = this._settings.get_int("workflow-runs-max-display") || 10;
-      console.log(
-        `[GitHubTray] Fetching workflow runs for ${owner}/${repoName} (max: ${maxRuns})`,
-      );
-      const workflowRuns = await api.fetchRepoWorkflowRuns(
-        token,
-        owner,
-        repoName,
-        maxRuns,
-      );
-      console.log(
-        `[GitHubTray] Fetched ${workflowRuns ? workflowRuns.length : 0} workflow runs for ${repo.full_name}`,
-      );
-      callback(workflowRuns);
-    } catch (error) {
-      console.error(
-        `[GitHubTray] Error fetching workflow runs for ${repo.full_name}:`,
-        error,
-      );
-      callback([]);
-    }
-  }
+  // -------------------------------------------------------------------------
+  // Helpers
+  // -------------------------------------------------------------------------
 
   _getLocalPath(repoFullName) {
     try {
@@ -236,8 +235,12 @@ export default class GitHubTrayExtension extends Extension {
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Event Handlers
+  // -------------------------------------------------------------------------
+
   _handleRepoUpdate(repos, username, userInfo, wasOpen, manualRefresh) {
-    const notifications = this._lastNotifications || [];
+    const notifications = this._notificationManager.lastNotifications;
     if (manualRefresh && wasOpen) {
       this._pendingUpdate = { repos, username, userInfo, notifications };
       this._indicator.menu.close();
@@ -263,160 +266,6 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
-  _scheduleChangeDetection(newRepos, oldRepos, newFollowers, oldFollowers) {
-    if (this._detectChangesTimeoutId) {
-      GLib.source_remove(this._detectChangesTimeoutId);
-      this._detectChangesTimeoutId = null;
-    }
-    this._detectChangesTimeoutId = GLib.timeout_add(
-      GLib.PRIORITY_DEFAULT,
-      100,
-      () => {
-        this._detectChangesTimeoutId = null;
-        if (this._indicator) {
-          this._detectAndNotify(newRepos, oldRepos, newFollowers, oldFollowers);
-        }
-        return GLib.SOURCE_REMOVE;
-      },
-    );
-  }
-
-  _detectAndNotify(newRepos, oldRepos, newFollowers, oldFollowers) {
-    const changes = detectChanges(newRepos, oldRepos);
-    if (!changes || !this._indicator || this._indicator.menu.isOpen) return;
-
-    if (changes.totalNewStars > 0) {
-      const starsMsg = changes.starsGained
-        .map((item) => `${item.name} +${item.diff} ⭐`)
-        .join("\n");
-      this._sendNotification(_("New Stars!"), starsMsg);
-    }
-
-    if (changes.newIssues.length > 0) {
-      const issuesMsg = changes.newIssues
-        .map(
-          (item) =>
-            `${item.name} +${item.diff} issue${item.diff > 1 ? "s" : ""}`,
-        )
-        .join("\n");
-      this._sendNotification(_("New Issues Opened"), issuesMsg);
-    }
-
-    if (changes.newForks.length > 0) {
-      const forksMsg = changes.newForks
-        .map(
-          (item) =>
-            `${item.name} +${item.diff} fork${item.diff > 1 ? "s" : ""}`,
-        )
-        .join("\n");
-      this._sendNotification(_("New Forks Created"), forksMsg);
-    }
-
-    // Detect new followers
-    const newFollowersList = detectNewFollowers(newFollowers, oldFollowers);
-    if (newFollowersList && newFollowersList.length > 0) {
-      let followersMsg;
-      if (newFollowersList.length === 1) {
-        followersMsg = newFollowersList[0].login;
-      } else {
-        followersMsg = `+${newFollowersList.length} followers`;
-      }
-      this._sendNotification(_("New Followers"), followersMsg);
-    }
-  }
-
-  _detectWorkflowChanges(newRuns, oldRuns, repo) {
-    if (!this._indicator || this._indicator.menu.isOpen) return;
-
-    const oldRunsMap = new Map(oldRuns.map((run) => [run.id, run]));
-
-    for (const newRun of newRuns) {
-      const oldRun = oldRunsMap.get(newRun.id);
-
-      // New workflow started
-      if (!oldRun && newRun.status === "in_progress") {
-        if (this._settings.get_boolean("notify-workflow-started")) {
-          this._sendNotification(
-            _("GitHub Actions: Workflow Started"),
-            `${repo.name} • ${newRun.name}\n${newRun.head_branch}`,
-          );
-        }
-        continue;
-      }
-
-      // Workflow status changed
-      if (oldRun && oldRun.status !== newRun.status) {
-        // Completed successfully
-        if (newRun.status === "completed" && newRun.conclusion === "success") {
-          if (this._settings.get_boolean("notify-workflow-success")) {
-            const duration = this._getWorkflowDuration(newRun);
-            this._sendNotification(
-              _("GitHub Actions: Workflow Succeeded"),
-              `${repo.name} • ${newRun.name}\n${duration}`,
-            );
-          }
-        }
-        // Failed
-        else if (
-          newRun.status === "completed" &&
-          newRun.conclusion === "failure"
-        ) {
-          if (this._settings.get_boolean("notify-workflow-failure")) {
-            this._sendNotification(
-              _("GitHub Actions: Workflow Failed"),
-              `${repo.name} • ${newRun.name}\n${newRun.head_branch}`,
-            );
-          }
-        }
-        // Cancelled
-        else if (
-          newRun.status === "completed" &&
-          newRun.conclusion === "cancelled"
-        ) {
-          if (this._settings.get_boolean("notify-workflow-cancelled")) {
-            this._sendNotification(
-              _("GitHub Actions: Workflow Cancelled"),
-              `${repo.name} • ${newRun.name}`,
-            );
-          }
-        }
-      }
-    }
-  }
-
-  _getWorkflowDuration(run) {
-    if (!run.run_started_at) return "";
-    const start = GLib.DateTime.new_from_iso8601(run.run_started_at, null);
-    const end = run.updated_at
-      ? GLib.DateTime.new_from_iso8601(run.updated_at, null)
-      : GLib.DateTime.new_now_utc();
-
-    if (!start || !end) return "";
-
-    const diffSec = end.to_unix() - start.to_unix();
-    const minutes = Math.floor(diffSec / 60);
-    const seconds = diffSec % 60;
-
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    }
-    return `${seconds}s`;
-  }
-
-  _sendNotification(summary, body) {
-    if (!summary || !body) return;
-
-    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-      try {
-        Main.notify(summary, body);
-      } catch (e) {
-        console.error(e, "GitHubTray:notify");
-      }
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
-  // Event Handlers
   _onDebugClick() {
     if (this._lastRepos && this._lastRepos.length >= 1) {
       const oldRepos = this._lastRepos;
@@ -492,7 +341,7 @@ export default class GitHubTrayExtension extends Extension {
               repos,
               username,
               userInfo,
-              notifications || this._lastNotifications || [],
+              notifications || this._notificationManager.lastNotifications,
             );
           }
 
@@ -500,7 +349,7 @@ export default class GitHubTrayExtension extends Extension {
             const { newRepos, oldRepos, newFollowers, oldFollowers } =
               this._pendingDetectChanges;
             this._pendingDetectChanges = null;
-            this._detectAndNotify(
+            this._changeDetector.schedule(
               newRepos,
               oldRepos,
               newFollowers,
@@ -514,234 +363,9 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
-  // Settings & Auto-refresh
-  _setupAutoRefresh() {
-    this._refreshTimeout = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT,
-      300,
-      () => {
-        this._loadRepositories();
-        return GLib.SOURCE_CONTINUE;
-      },
-    );
-  }
-
-  _setupNotificationRefresh() {
-    if (!this._settings.get_boolean("show-notifications")) return;
-
-    this._loadNotifications();
-    const interval = this._settings.get_int("notification-interval");
-    this._notificationRefreshTimeout = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT,
-      interval,
-      () => {
-        if (this._settings.get_boolean("show-notifications")) {
-          this._loadNotifications();
-        }
-        return GLib.SOURCE_CONTINUE;
-      },
-    );
-  }
-
-  _setupMonitoredWorkflowRefresh() {
-    // Refresh monitored workflows every 5 minutes
-    const interval = 300; // 5 minutes
-    this._monitoredWorkflowRefreshTimeout = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT,
-      interval,
-      () => {
-        this._loadMonitoredWorkflowRuns();
-        return GLib.SOURCE_CONTINUE;
-      },
-    );
-  }
-
-  async _loadMonitoredWorkflowRuns() {
-    const token = this._settings?.get_string("github-token");
-    if (!token) return;
-
-    const monitoredRepos = this._getMonitoredRepos();
-    if (monitoredRepos.length === 0) return;
-
-    console.log(
-      `[GitHubTray] Loading workflow runs for ${monitoredRepos.length} monitored repos`,
-    );
-
-    const api = new GitHubApi(this._httpSession);
-
-    for (const repo of monitoredRepos) {
-      try {
-        const [owner, repoName] = repo.full_name.split("/");
-        const workflowRuns = await api.fetchRepoWorkflowRuns(
-          token,
-          owner,
-          repoName,
-          5,
-        );
-
-        const oldRuns = this._monitoredWorkflowRuns.get(repo.full_name) || [];
-        this._monitoredWorkflowRuns.set(repo.full_name, workflowRuns);
-
-        // Detect changes and notify
-        if (oldRuns.length > 0) {
-          this._detectWorkflowChanges(workflowRuns, oldRuns, repo);
-        }
-      } catch (error) {
-        console.error(
-          `[GitHubTray] Error loading workflow runs for ${repo.full_name}:`,
-          error,
-        );
-      }
-    }
-  }
-
-  async _loadNotifications(merge = false) {
-    const token = this._settings?.get_string("github-token");
-    if (!token) return;
-
-    try {
-      const api = new GitHubApi(this._httpSession);
-      let notifications = await api.fetchNotifications(token);
-
-      notifications = this._filterNotifications(notifications);
-
-      if (merge && this._lastNotifications.length > 0) {
-        // Merge mode: append only new notifications not already in the buffer
-        const existingIds = new Set(this._lastNotifications.map((n) => n.id));
-        const newOnes = notifications.filter((n) => !existingIds.has(n.id));
-        this._lastNotifications = [...this._lastNotifications, ...newOnes];
-      } else {
-        const oldUnreadCount = this._unreadCount;
-        this._lastNotifications = notifications;
-
-        const unreadCount = notifications.filter((n) => n.unread).length;
-        this._unreadCount = unreadCount;
-
-        if (this._badge) {
-          this._ui.updateBadge(unreadCount);
-        }
-
-        if (
-          unreadCount > oldUnreadCount &&
-          this._settings.get_boolean("desktop-notifications")
-        ) {
-          const newCount = unreadCount - oldUnreadCount;
-          if (newCount > 0) {
-            this._sendNotification(
-              _("GitHub Notifications"),
-              ngettext(
-                "%d new notification",
-                "%d new notifications",
-                newCount,
-              ).format(newCount),
-            );
-          }
-        }
-      }
-
-      if (
-        this._pendingUpdate &&
-        this._indicator &&
-        !this._indicator.menu.isOpen
-      ) {
-        const { repos, username, userInfo } = this._pendingUpdate;
-        this._pendingUpdate = null;
-        this._ui.updateMenu(
-          repos,
-          username,
-          userInfo,
-          this._lastNotifications,
-        );
-      }
-    } catch (error) {
-      console.error(error, "GitHubTray:loadNotifications");
-    }
-  }
-
-  _filterNotifications(notifications) {
-    return notifications.filter((n) => {
-      const reason = n.reason;
-      const type = n.subject.type;
-
-      if (reason === "review_requested") {
-        return this._settings.get_boolean("notify-review-requests");
-      }
-      if (reason === "mention" || reason === "team_mention") {
-        return this._settings.get_boolean("notify-mentions");
-      }
-      if (reason === "assign") {
-        return this._settings.get_boolean("notify-assignments");
-      }
-      if (
-        type === "PullRequest" ||
-        type === "PullRequestReview" ||
-        type === "PullRequestReviewComment"
-      ) {
-        return this._settings.get_boolean("notify-pr-comments");
-      }
-      if (type === "Issue" || type === "IssueComment") {
-        return this._settings.get_boolean("notify-issue-comments");
-      }
-      return true;
-    });
-  }
-
-  async _markNotificationRead(notification, callback) {
-    const token = this._settings?.get_string("github-token");
-    if (!token) {
-      callback();
-      return;
-    }
-
-    try {
-      const api = new GitHubApi(this._httpSession);
-      await api.markNotificationRead(token, notification.id);
-
-      // Remove from the local buffer
-      this._lastNotifications = this._lastNotifications.filter(
-        (n) => n.id !== notification.id,
-      );
-      this._unreadCount = Math.max(0, this._unreadCount - 1);
-      this._ui.updateBadge(this._unreadCount);
-
-      // Update the UI immediately with the current buffer
-      this._ui.refreshNotifications(this._lastNotifications);
-
-      // If the buffer is running low, fetch more and merge new ones
-      if (this._lastNotifications.length < 5) {
-        await this._loadNotifications(true);
-        this._ui.refreshNotifications(this._lastNotifications);
-      }
-    } catch (error) {
-      console.error(error, "GitHubTray:markNotificationRead");
-      callback();
-    }
-  }
-
-  async _rerunWorkflow(workflowRun, callback) {
-    const token = this._settings?.get_string("github-token");
-    if (!token) {
-      callback(false);
-      return;
-    }
-
-    try {
-      const api = new GitHubApi(this._httpSession);
-      const [owner, repo] = workflowRun.repository_full_name.split("/");
-      await api.rerunWorkflow(token, owner, repo, workflowRun.id);
-
-      // Refresh workflow runs after a short delay
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
-        this._loadWorkflowRuns();
-        return GLib.SOURCE_REMOVE;
-      });
-
-      callback(true);
-    } catch (error) {
-      console.error(error, "GitHubTray:rerunWorkflow");
-      callback(false);
-    }
-  }
+  // -------------------------------------------------------------------------
+  // Settings
+  // -------------------------------------------------------------------------
 
   _setupSettingsListener() {
     this._settingsDebounceId = null;
@@ -753,7 +377,6 @@ export default class GitHubTrayExtension extends Extension {
           return;
         }
 
-        // Handle panel position change
         if (key === "panel-box") {
           this._updatePanelPosition();
           return;
@@ -790,18 +413,19 @@ export default class GitHubTrayExtension extends Extension {
   _updatePanelPosition() {
     if (!this._indicator) return;
 
-    // Remove from current position
     const container = this._indicator.get_parent();
     if (container) {
       container.remove_child(this._indicator);
     }
 
-    // Add to new position
     const panelBox = this._settings.get_string("panel-box") || "right";
     Main.panel.addToStatusArea("github-tray", this._indicator, 0, panelBox);
   }
 
+  // -------------------------------------------------------------------------
   // Network
+  // -------------------------------------------------------------------------
+
   _waitForNetworkAndLoad() {
     const networkMonitor = Gio.NetworkMonitor.get_default();
 
@@ -828,27 +452,17 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
+  // -------------------------------------------------------------------------
   // Cleanup
+  // -------------------------------------------------------------------------
+
   _cleanupTimers() {
-    if (this._refreshTimeout) {
-      GLib.source_remove(this._refreshTimeout);
-      this._refreshTimeout = null;
-    }
-    if (this._notificationRefreshTimeout) {
-      GLib.source_remove(this._notificationRefreshTimeout);
-      this._notificationRefreshTimeout = null;
-    }
-    if (this._monitoredWorkflowRefreshTimeout) {
-      GLib.source_remove(this._monitoredWorkflowRefreshTimeout);
-      this._monitoredWorkflowRefreshTimeout = null;
-    }
+    this._refreshManager?.cleanup();
+    this._changeDetector?.cleanup();
+
     if (this._settingsDebounceId) {
       GLib.source_remove(this._settingsDebounceId);
       this._settingsDebounceId = null;
-    }
-    if (this._detectChangesTimeoutId) {
-      GLib.source_remove(this._detectChangesTimeoutId);
-      this._detectChangesTimeoutId = null;
     }
     if (this._menuReopenTimeout) {
       GLib.source_remove(this._menuReopenTimeout);
@@ -884,6 +498,11 @@ export default class GitHubTrayExtension extends Extension {
   }
 
   _cleanupState() {
+    this._notificationManager?.destroy();
+    this._workflowManager?.destroy();
+    this._refreshManager?.destroy();
+    this._changeDetector?.destroy();
+
     this._httpSession.abort();
     this._httpSession = null;
     this._settings = null;
