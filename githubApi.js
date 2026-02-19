@@ -175,7 +175,8 @@ export class GitHubApi {
     );
 
     const statusCode = message.get_status();
-    if (statusCode !== Soup.Status.OK) {
+    // GitHub API returns 205 Reset Content for marking notifications as read
+    if (statusCode !== 205 && statusCode !== Soup.Status.OK) {
       throw new Error(`HTTP ${statusCode}`);
     }
   }

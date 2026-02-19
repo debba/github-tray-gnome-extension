@@ -414,8 +414,7 @@ export class GitHubTrayUI {
   }
 
   _buildNotificationsSection(notifications) {
-    const maxDisplay = 5;
-    const displayNotifications = notifications.slice(0, maxDisplay);
+    const maxDisplay = 10;
 
     const sectionTitle = new PopupMenu.PopupBaseMenuItem({
       reactive: false,
@@ -467,23 +466,25 @@ export class GitHubTrayUI {
       emptyItem.add_child(emptyLabel);
       this._headerSection.addMenuItem(emptyItem);
     } else {
+      const displayNotifications = notifications.slice(0, maxDisplay);
+
+      this._notificationsContainer = new PopupMenu.PopupMenuSection();
       for (const notification of displayNotifications) {
         const item = this._createNotificationItem(notification);
-        this._headerSection.addMenuItem(item);
+        this._notificationsContainer.addMenuItem(item);
       }
 
-      if (notifications.length > maxDisplay) {
-        const moreItem = new PopupMenu.PopupBaseMenuItem({
-          reactive: false,
-          can_focus: false,
-        });
-        const moreLabel = new St.Label({
-          text: _("+ %d more").format(notifications.length - maxDisplay),
-          style_class: "github-tray-notification-more",
-        });
-        moreItem.add_child(moreLabel);
-        this._headerSection.addMenuItem(moreItem);
-      }
+      const scrollView = new St.ScrollView({
+        style_class: "github-tray-notifications-scrollview",
+        hscrollbar_policy: St.PolicyType.NEVER,
+        vscrollbar_policy: St.PolicyType.AUTOMATIC,
+        enable_mouse_scrolling: true,
+      });
+      scrollView.set_child(this._notificationsContainer.actor);
+
+      const scrollSection = new PopupMenu.PopupMenuSection();
+      scrollSection.actor.add_child(scrollView);
+      this._headerSection.addMenuItem(scrollSection);
     }
   }
 
@@ -573,8 +574,7 @@ export class GitHubTrayUI {
   }
 
   _buildNotificationsAccordion(notifications) {
-    const maxDisplay = 5;
-    const displayNotifications = notifications.slice(0, maxDisplay);
+    const maxDisplay = 10;
 
     // Open All button
     const openAllBtn = new St.Button({
@@ -601,8 +601,8 @@ export class GitHubTrayUI {
       (icon) => {
         this._notificationsExpanded = !this._notificationsExpanded;
         icon.set_text(this._notificationsExpanded ? "▼" : "▶");
-        if (this._notificationsAccordionContent) {
-          this._notificationsAccordionContent.actor.visible =
+        if (this._notificationsAccordionScrollView) {
+          this._notificationsAccordionScrollView.visible =
             this._notificationsExpanded;
         }
       },
@@ -611,11 +611,11 @@ export class GitHubTrayUI {
     );
     this._headerSection.addMenuItem(headerItem);
 
-    this._notificationsAccordionContent = new PopupMenu.PopupMenuSection();
-    this._notificationsAccordionContent.actor.visible =
-      this._notificationsExpanded;
-
     if (notifications.length === 0) {
+      this._notificationsAccordionContent = new PopupMenu.PopupMenuSection();
+      this._notificationsAccordionContent.actor.visible =
+        this._notificationsExpanded;
+
       const emptyItem = new PopupMenu.PopupBaseMenuItem({
         reactive: false,
         can_focus: false,
@@ -626,27 +626,31 @@ export class GitHubTrayUI {
       });
       emptyItem.add_child(emptyLabel);
       this._notificationsAccordionContent.addMenuItem(emptyItem);
+      this._headerSection.addMenuItem(this._notificationsAccordionContent);
     } else {
+      const displayNotifications = notifications.slice(0, maxDisplay);
+
+      this._notificationsContainer = new PopupMenu.PopupMenuSection();
       for (const notification of displayNotifications) {
         const item = this._createNotificationItem(notification);
-        this._notificationsAccordionContent.addMenuItem(item);
+        this._notificationsContainer.addMenuItem(item);
       }
 
-      if (notifications.length > maxDisplay) {
-        const moreItem = new PopupMenu.PopupBaseMenuItem({
-          reactive: false,
-          can_focus: false,
-        });
-        const moreLabel = new St.Label({
-          text: _("+ %d more").format(notifications.length - maxDisplay),
-          style_class: "github-tray-notification-more",
-        });
-        moreItem.add_child(moreLabel);
-        this._notificationsAccordionContent.addMenuItem(moreItem);
-      }
+      const scrollView = new St.ScrollView({
+        style_class: "github-tray-notifications-scrollview",
+        hscrollbar_policy: St.PolicyType.NEVER,
+        vscrollbar_policy: St.PolicyType.AUTOMATIC,
+        enable_mouse_scrolling: true,
+      });
+      scrollView.set_child(this._notificationsContainer.actor);
+      scrollView.visible = this._notificationsExpanded;
+      this._notificationsAccordionScrollView = scrollView;
+
+      const scrollSection = new PopupMenu.PopupMenuSection();
+      scrollSection.actor.add_child(scrollView);
+      this._headerSection.addMenuItem(scrollSection);
     }
 
-    this._headerSection.addMenuItem(this._notificationsAccordionContent);
     this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
   }
 
@@ -1709,7 +1713,21 @@ export class GitHubTrayUI {
   refreshNotifications(notifications) {
     this._cachedNotifications = notifications;
 
-    // Re-render the whole menu to update notifications list
+    // Update the notifications container in-place if available
+    if (this._notificationsContainer) {
+      const maxDisplay = 10;
+      const unreadNotifications = notifications.filter((n) => n.unread);
+      const displayNotifications = unreadNotifications.slice(0, maxDisplay);
+
+      this._notificationsContainer.removeAll();
+      for (const notification of displayNotifications) {
+        const item = this._createNotificationItem(notification);
+        this._notificationsContainer.addMenuItem(item);
+      }
+      return;
+    }
+
+    // Fallback: re-render the whole menu
     if (this._cachedRepos && this._cachedUsername) {
       this.updateMenu(
         this._cachedRepos,

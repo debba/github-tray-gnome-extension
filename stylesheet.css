@@ -257,6 +257,10 @@
     max-height: 420px;
 }
 
+.github-tray-notifications-scrollview {
+    max-height: 420px;
+}
+
 /* ── Header ─────────────────────────────────────────────────── */
 
 .github-tray-header {

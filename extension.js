@@ -595,7 +595,7 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
-  async _loadNotifications() {
+  async _loadNotifications(merge = false) {
     const token = this._settings?.get_string("github-token");
     if (!token) return;
 
@@ -604,30 +604,39 @@ export default class GitHubTrayExtension extends Extension {
       let notifications = await api.fetchNotifications(token);
 
       notifications = this._filterNotifications(notifications);
-      const unreadCount = notifications.filter((n) => n.unread).length;
 
-      const oldUnreadCount = this._unreadCount;
-      this._lastNotifications = notifications;
-      this._unreadCount = unreadCount;
+      if (merge && this._lastNotifications.length > 0) {
+        // Merge mode: append only new notifications not already in the buffer
+        const existingIds = new Set(this._lastNotifications.map((n) => n.id));
+        const newOnes = notifications.filter((n) => !existingIds.has(n.id));
+        this._lastNotifications = [...this._lastNotifications, ...newOnes];
+      } else {
+        // Full replace mode (initial load or periodic refresh)
+        const oldUnreadCount = this._unreadCount;
+        this._lastNotifications = notifications;
 
-      if (this._badge) {
-        this._ui.updateBadge(unreadCount);
-      }
+        const unreadCount = notifications.filter((n) => n.unread).length;
+        this._unreadCount = unreadCount;
 
-      if (
-        unreadCount > oldUnreadCount &&
-        this._settings.get_boolean("desktop-notifications")
-      ) {
-        const newCount = unreadCount - oldUnreadCount;
-        if (newCount > 0) {
-          this._sendNotification(
-            _("GitHub Notifications"),
-            ngettext(
-              "%d new notification",
-              "%d new notifications",
-              newCount,
-            ).format(newCount),
-          );
+        if (this._badge) {
+          this._ui.updateBadge(unreadCount);
+        }
+
+        if (
+          unreadCount > oldUnreadCount &&
+          this._settings.get_boolean("desktop-notifications")
+        ) {
+          const newCount = unreadCount - oldUnreadCount;
+          if (newCount > 0) {
+            this._sendNotification(
+              _("GitHub Notifications"),
+              ngettext(
+                "%d new notification",
+                "%d new notifications",
+                newCount,
+              ).format(newCount),
+            );
+          }
         }
       }
 
@@ -638,7 +647,12 @@ export default class GitHubTrayExtension extends Extension {
       ) {
         const { repos, username, userInfo } = this._pendingUpdate;
         this._pendingUpdate = null;
-        this._ui.updateMenu(repos, username, userInfo, notifications);
+        this._ui.updateMenu(
+          repos,
+          username,
+          userInfo,
+          this._lastNotifications,
+        );
       }
     } catch (error) {
       console.error(error, "GitHubTray:loadNotifications");
@@ -684,9 +698,21 @@ export default class GitHubTrayExtension extends Extension {
       const api = new GitHubApi(this._httpSession);
       await api.markNotificationRead(token, notification.id);
 
-      // Reload notifications from the API to reflect the actual server state
-      await this._loadNotifications();
+      // Remove from the local buffer
+      this._lastNotifications = this._lastNotifications.filter(
+        (n) => n.id !== notification.id,
+      );
+      this._unreadCount = Math.max(0, this._unreadCount - 1);
+      this._ui.updateBadge(this._unreadCount);
+
+      // Update the UI immediately with the current buffer
       this._ui.refreshNotifications(this._lastNotifications);
+
+      // If the buffer is running low, fetch more and merge new ones
+      if (this._lastNotifications.length < 5) {
+        await this._loadNotifications(true);
+        this._ui.refreshNotifications(this._lastNotifications);
+      }
     } catch (error) {
       console.error(error, "GitHubTray:markNotificationRead");
       callback();
