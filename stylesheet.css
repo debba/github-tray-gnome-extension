@@ -21,9 +21,12 @@
     font-size: 10px;
 }
 
-.github-tray-font-medium .github-tray-stat-value,
-.github-tray-font-medium .github-tray-stat-icon {
+.github-tray-font-medium .github-tray-stat-value {
     font-size: 11px;
+}
+
+.github-tray-font-medium .github-tray-stat-icon {
+    icon-size: 13px;
 }
 
 .github-tray-font-medium .github-tray-description {
@@ -85,9 +88,12 @@
     font-size: 11px;
 }
 
-.github-tray-font-large .github-tray-stat-value,
-.github-tray-font-large .github-tray-stat-icon {
+.github-tray-font-large .github-tray-stat-value {
     font-size: 12px;
+}
+
+.github-tray-font-large .github-tray-stat-icon {
+    icon-size: 14px;
 }
 
 .github-tray-font-large .github-tray-description {
@@ -162,7 +168,7 @@
 }
 
 .github-tray-font-medium .github-tray-notification-type-icon {
-    font-size: 11px;
+    icon-size: 15px;
 }
 
 .github-tray-font-medium .github-tray-notification-title-btn {
@@ -206,7 +212,7 @@
 }
 
 .github-tray-font-large .github-tray-notification-type-icon {
-    font-size: 12px;
+    icon-size: 16px;
 }
 
 .github-tray-font-large .github-tray-notification-title-btn {
@@ -522,7 +528,7 @@
 }
 
 .github-tray-stat-icon {
-    font-size: 10px;
+    icon-size: 12px;
     y-align: center;
 }
 
@@ -533,9 +539,6 @@
     y-align: center;
 }
 
-.github-tray-issues-value {
-    color: #f85149;
-}
 
 .github-tray-updated {
     font-size: 9px;
@@ -835,10 +838,6 @@
     margin-bottom: 4px;
 }
 
-.github-tray-notification-type-icon {
-    font-size: 10px;
-}
-
 .github-tray-notification-repo {
     font-size: 9px;
     color: #6e7681;
@@ -875,6 +874,107 @@
 .github-tray-mark-read-btn:hover {
     background-color: rgba(35, 134, 54, 0.3);
     border: 1px solid rgba(46, 160, 67, 0.5);
+}
+
+/* ── Notification state badge (Open / Closed / Merged / Draft) ─ */
+
+.github-tray-notification-state-badge {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background-color: rgba(48, 54, 61, 0.6);
+    border: 1px solid rgba(110, 118, 129, 0.3);
+    color: #8b949e;
+}
+
+/* ── Octicon repo stat icons (GitHub official colors) ──────────── */
+
+/* Star — yellow */
+.octicon-stat-star {
+    color: #d29922;
+}
+
+/* Fork — grey */
+.octicon-stat-fork {
+    color: #8b949e;
+}
+
+/* Issue open — green */
+.octicon-stat-issue {
+    color: #3fb950;
+}
+
+/* ── Octicon notification type icons (GitHub official colors) ─── */
+
+/* Base size — all notification type icons */
+.github-tray-notification-type-icon {
+    icon-size: 14px;
+}
+
+/* Issue open — green (#3fb950) */
+.octicon-issue-open {
+    color: #3fb950;
+}
+
+/* Issue closed — purple (#8957e5) */
+.octicon-issue-closed {
+    color: #8957e5;
+}
+
+/* PR open — green (#3fb950) */
+.octicon-pr-open {
+    color: #3fb950;
+}
+
+/* PR closed — red (#f85149) */
+.octicon-pr-closed {
+    color: #f85149;
+}
+
+/* PR merged — purple (#a371f7) */
+.octicon-pr-merged {
+    color: #a371f7;
+}
+
+/* PR draft — grey (#8b949e) */
+.octicon-pr-draft {
+    color: #8b949e;
+}
+
+/* Commit — blue (#58a6ff) */
+.octicon-commit {
+    color: #58a6ff;
+}
+
+/* Release / tag — yellow (#d29922) */
+.octicon-release {
+    color: #d29922;
+}
+
+/* Discussion — blue (#58a6ff) */
+.octicon-discussion {
+    color: #58a6ff;
+}
+
+/* Mention — orange (#e3b341) */
+.octicon-mention {
+    color: #e3b341;
+}
+
+/* Assign — grey (#8b949e) */
+.octicon-assign {
+    color: #8b949e;
+}
+
+/* Review requested — blue (#58a6ff) */
+.octicon-review {
+    color: #58a6ff;
+}
+
+/* Security alert — red (#f85149) */
+.octicon-security {
+    color: #f85149;
 }
 
 /* ── Accordion ────────────────────────────────────────────────── */
@@ -1117,4 +1217,38 @@
 .github-tray-font-large .github-tray-workflow-status-text,
 .github-tray-font-large .github-tray-workflow-time {
     font-size: 11px;
+}
+
+/* ── Notifications pagination ───────────────────────────────── */
+
+.github-tray-notifications-pager {
+    padding: 2px 8px;
+}
+
+.github-tray-notifications-pager-box {
+    spacing: 4px;
+}
+
+.github-tray-pager-btn {
+    padding: 2px 10px;
+    min-width: 28px;
+    min-height: 20px;
+    background-color: rgba(48, 54, 61, 0.8);
+    border-radius: 5px;
+    color: #8b949e;
+    border: 1px solid rgba(48, 54, 61, 0.9);
+    font-size: 12px;
+}
+
+.github-tray-pager-btn:hover {
+    background-color: rgba(88, 166, 255, 0.15);
+    color: #58a6ff;
+    border: 1px solid rgba(88, 166, 255, 0.3);
+}
+
+.github-tray-pager-label {
+    font-size: 10px;
+    color: #8b949e;
+    min-width: 40px;
+    text-align: center;
 }

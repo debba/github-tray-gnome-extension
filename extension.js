@@ -68,6 +68,7 @@ export default class GitHubTrayExtension extends Extension {
       this._indicator,
       this._settings,
       this._httpSession,
+      this.path,
     );
     this._ui.setBadgeWidget(null);
     this._ui.buildMenu(

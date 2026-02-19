@@ -6,6 +6,9 @@ import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import { formatNumber, relativeTime } from "./utils.js";
 import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 
+// Number of notifications shown per page in the menu
+const NOTIFICATIONS_PAGE_SIZE = 10;
+
 const LANG_COLORS = {
   JavaScript: "#f1e05a",
   TypeScript: "#3178c6",
@@ -43,10 +46,11 @@ const LANG_COLORS = {
 };
 
 export class GitHubTrayUI {
-  constructor(indicator, settings, httpSession = null) {
+  constructor(indicator, settings, httpSession = null, extensionPath = null) {
     this._indicator = indicator;
     this._settings = settings;
     this._httpSession = httpSession;
+    this._extensionPath = extensionPath;
     this._reposContainer = null;
     this._headerSection = null;
     this._notificationsSection = null;
@@ -66,6 +70,11 @@ export class GitHubTrayUI {
     this._onMarkNotificationRead = null;
     this._onRerunWorkflow = null;
     this._onFetchWorkflowRuns = null;
+    // Current page index for notifications pagination (0-based)
+    this._notificationsPage = 0;
+    // Reference to the current pager item for in-place updates
+    this._notificationsPagerItem = null;
+    this._notificationsAccordionPager = null;
   }
 
   buildMenu(
@@ -170,6 +179,10 @@ export class GitHubTrayUI {
       this._cachedUserInfo = userInfo;
       this._cachedNotifications = notifications;
       this._currentView = "repos";
+      // Reset pagination when the full menu is refreshed
+      this._notificationsPage = 0;
+      this._notificationsPagerItem = null;
+      this._notificationsAccordionPager = null;
 
       this._applyFontSize();
       this._headerSection.removeAll();
@@ -414,8 +427,6 @@ export class GitHubTrayUI {
   }
 
   _buildNotificationsSection(notifications) {
-    const maxDisplay = 10;
-
     const sectionTitle = new PopupMenu.PopupBaseMenuItem({
       reactive: false,
       can_focus: false,
@@ -466,7 +477,16 @@ export class GitHubTrayUI {
       emptyItem.add_child(emptyLabel);
       this._headerSection.addMenuItem(emptyItem);
     } else {
-      const displayNotifications = notifications.slice(0, maxDisplay);
+      // Clamp current page to valid range
+      const totalPages = Math.ceil(notifications.length / NOTIFICATIONS_PAGE_SIZE);
+      if (this._notificationsPage >= totalPages) {
+        this._notificationsPage = totalPages - 1;
+      }
+      const start = this._notificationsPage * NOTIFICATIONS_PAGE_SIZE;
+      const displayNotifications = notifications.slice(
+        start,
+        start + NOTIFICATIONS_PAGE_SIZE,
+      );
 
       this._notificationsContainer = new PopupMenu.PopupMenuSection();
       for (const notification of displayNotifications) {
@@ -485,6 +505,17 @@ export class GitHubTrayUI {
       const scrollSection = new PopupMenu.PopupMenuSection();
       scrollSection.actor.add_child(scrollView);
       this._headerSection.addMenuItem(scrollSection);
+
+      // Pagination controls (prev / page indicator / next)
+      if (totalPages > 1) {
+        const pagerItem = this._createNotificationsPager(
+          notifications,
+          totalPages,
+          false,
+        );
+        this._notificationsPagerItem = pagerItem;
+        this._headerSection.addMenuItem(pagerItem);
+      }
     }
   }
 
@@ -574,8 +605,6 @@ export class GitHubTrayUI {
   }
 
   _buildNotificationsAccordion(notifications) {
-    const maxDisplay = 10;
-
     // Open All button
     const openAllBtn = new St.Button({
       label: _("Open All"),
@@ -605,6 +634,10 @@ export class GitHubTrayUI {
           this._notificationsAccordionScrollView.visible =
             this._notificationsExpanded;
         }
+        if (this._notificationsAccordionPager) {
+          this._notificationsAccordionPager.actor.visible =
+            this._notificationsExpanded;
+        }
       },
       "preferences-system-notifications-symbolic",
       openAllBtn,
@@ -628,7 +661,16 @@ export class GitHubTrayUI {
       this._notificationsAccordionContent.addMenuItem(emptyItem);
       this._headerSection.addMenuItem(this._notificationsAccordionContent);
     } else {
-      const displayNotifications = notifications.slice(0, maxDisplay);
+      // Clamp current page to valid range
+      const totalPages = Math.ceil(notifications.length / NOTIFICATIONS_PAGE_SIZE);
+      if (this._notificationsPage >= totalPages) {
+        this._notificationsPage = totalPages - 1;
+      }
+      const start = this._notificationsPage * NOTIFICATIONS_PAGE_SIZE;
+      const displayNotifications = notifications.slice(
+        start,
+        start + NOTIFICATIONS_PAGE_SIZE,
+      );
 
       this._notificationsContainer = new PopupMenu.PopupMenuSection();
       for (const notification of displayNotifications) {
@@ -649,9 +691,168 @@ export class GitHubTrayUI {
       const scrollSection = new PopupMenu.PopupMenuSection();
       scrollSection.actor.add_child(scrollView);
       this._headerSection.addMenuItem(scrollSection);
+
+      // Pagination controls (prev / page indicator / next)
+      if (totalPages > 1) {
+        const pagerItem = this._createNotificationsPager(
+          notifications,
+          totalPages,
+          true,
+        );
+        pagerItem.actor.visible = this._notificationsExpanded;
+        this._notificationsAccordionPager = pagerItem;
+        this._notificationsPagerItem = pagerItem;
+        this._headerSection.addMenuItem(pagerItem);
+      }
     }
 
     this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+  }
+
+  /**
+   * Creates a pager row (prev button, "page X/Y" label, next button) for
+   * the notifications list.
+   *
+   * @param {Array} notifications - Full list of notifications being paginated
+   * @param {number} totalPages   - Total number of pages
+   * @param {boolean} inAccordion - Whether we are inside an accordion (affects
+   *                                rebuild path after navigation)
+   * @returns {PopupMenu.PopupBaseMenuItem}
+   */
+  _createNotificationsPager(notifications, totalPages, inAccordion) {
+    const pagerItem = new PopupMenu.PopupBaseMenuItem({
+      reactive: false,
+      can_focus: false,
+      style_class: "github-tray-notifications-pager",
+    });
+
+    const pagerBox = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+      style_class: "github-tray-notifications-pager-box",
+    });
+
+    // Previous page button
+    const prevBtn = new St.Button({
+      label: "←",
+      style_class: "button github-tray-pager-btn",
+      can_focus: true,
+      reactive: this._notificationsPage > 0,
+    });
+    prevBtn.set_opacity(this._notificationsPage > 0 ? 255 : 80);
+    prevBtn.connect("clicked", () => {
+      if (this._notificationsPage > 0) {
+        this._notificationsPage--;
+        this._rebuildNotificationsInPlace(notifications, inAccordion);
+      }
+    });
+
+    // Page indicator label
+    const pageLabel = new St.Label({
+      text: `${this._notificationsPage + 1} / ${totalPages}`,
+      style_class: "github-tray-pager-label",
+      x_expand: true,
+      x_align: Clutter.ActorAlign.CENTER,
+    });
+
+    // Next page button
+    const nextBtn = new St.Button({
+      label: "→",
+      style_class: "button github-tray-pager-btn",
+      can_focus: true,
+      reactive: this._notificationsPage < totalPages - 1,
+    });
+    nextBtn.set_opacity(this._notificationsPage < totalPages - 1 ? 255 : 80);
+    nextBtn.connect("clicked", () => {
+      if (this._notificationsPage < totalPages - 1) {
+        this._notificationsPage++;
+        this._rebuildNotificationsInPlace(notifications, inAccordion);
+      }
+    });
+
+    pagerBox.add_child(prevBtn);
+    pagerBox.add_child(pageLabel);
+    pagerBox.add_child(nextBtn);
+    pagerItem.add_child(pagerBox);
+
+    // Store references for in-place updates on page change
+    pagerItem._prevBtn = prevBtn;
+    pagerItem._pageLabel = pageLabel;
+    pagerItem._nextBtn = nextBtn;
+
+    return pagerItem;
+  }
+
+  /**
+   * Updates the pager controls (button states and label) without moving the
+   * pager item in the actor tree, so it stays in the correct position.
+   *
+   * @param {PopupMenu.PopupBaseMenuItem} pagerItem - The pager item to update
+   * @param {number} totalPages - Total number of pages
+   */
+  _updatePagerControls(pagerItem, totalPages) {
+    if (!pagerItem) return;
+    const { _prevBtn: prevBtn, _pageLabel: pageLabel, _nextBtn: nextBtn } =
+      pagerItem;
+    if (!prevBtn || !pageLabel || !nextBtn) return;
+
+    const canGoPrev = this._notificationsPage > 0;
+    const canGoNext = this._notificationsPage < totalPages - 1;
+
+    prevBtn.reactive = canGoPrev;
+    prevBtn.set_opacity(canGoPrev ? 255 : 80);
+
+    nextBtn.reactive = canGoNext;
+    nextBtn.set_opacity(canGoNext ? 255 : 80);
+
+    pageLabel.set_text(`${this._notificationsPage + 1} / ${totalPages}`);
+  }
+
+  /**
+   * Rebuilds the notifications list in-place after a page change without
+   * re-rendering the whole menu.
+   *
+   * @param {Array} notifications - Full list of notifications being paginated
+   * @param {boolean} inAccordion - Whether the pager lives inside an accordion
+   */
+  _rebuildNotificationsInPlace(notifications, inAccordion) {
+    if (!this._notificationsContainer) {
+      // Fallback: full menu rebuild
+      if (this._cachedRepos && this._cachedUsername) {
+        this.updateMenu(
+          this._cachedRepos,
+          this._cachedUsername,
+          this._cachedUserInfo,
+          this._cachedNotifications,
+        );
+      }
+      return;
+    }
+
+    const totalPages = Math.ceil(notifications.length / NOTIFICATIONS_PAGE_SIZE);
+    if (this._notificationsPage >= totalPages) {
+      this._notificationsPage = totalPages - 1;
+    }
+    const start = this._notificationsPage * NOTIFICATIONS_PAGE_SIZE;
+    const displayNotifications = notifications.slice(
+      start,
+      start + NOTIFICATIONS_PAGE_SIZE,
+    );
+
+    // Replace notification items
+    this._notificationsContainer.removeAll();
+    for (const notification of displayNotifications) {
+      const item = this._createNotificationItem(notification);
+      this._notificationsContainer.addMenuItem(item);
+    }
+
+    // Update pager controls in-place so the pager item stays in the correct
+    // position in the menu and does not drift into the repos section.
+    const pagerItem =
+      this._notificationsPagerItem ||
+      (inAccordion ? this._notificationsAccordionPager : null);
+    this._updatePagerControls(pagerItem, totalPages);
   }
 
   _createWorkflowRunItem(run) {
@@ -914,6 +1115,28 @@ export class GitHubTrayUI {
     }
   }
 
+  /**
+   * Creates an St.Icon from a bundled Octicon SVG file.
+   * Falls back to a text label if the extension path is not available.
+   *
+   * @param {string} name - SVG filename without extension (e.g. "issue-opened-symbolic")
+   * @param {string} styleClass - CSS class to apply to the icon
+   * @param {string} fallbackText - Emoji/text to use if SVG loading fails
+   * @returns {St.Icon|St.Label}
+   */
+  _makeOcticonIcon(name, styleClass, fallbackText = "•") {
+    if (!this._extensionPath) {
+      return new St.Label({ text: fallbackText, style_class: styleClass });
+    }
+    try {
+      const path = `${this._extensionPath}/ui/icons/${name}.svg`;
+      const gicon = Gio.Icon.new_for_string(path);
+      return new St.Icon({ gicon, style_class: styleClass });
+    } catch (_e) {
+      return new St.Label({ text: fallbackText, style_class: styleClass });
+    }
+  }
+
   _createNotificationItem(notification) {
     const menuItem = new PopupMenu.PopupBaseMenuItem({
       style_class: "github-tray-notification-item",
@@ -933,26 +1156,82 @@ export class GitHubTrayUI {
       style_class: "github-tray-notification-top-row",
     });
 
-    const iconMap = {
-      Issue: "🔴",
-      IssueComment: "💬",
-      PullRequest: "🟣",
-      PullRequestReview: "👀",
-      PullRequestReviewComment: "💬",
-      Commit: "📝",
-      Release: "🏷️",
-      Discussion: "🗣️",
-      Mention: "📛",
-      Assign: "👤",
-      ReviewRequested: "🔍",
-      SecurityAlert: "⚠️",
-    };
+    // Resolve the Octicon SVG name and state badge based on type and GraphQL state
+    const type = notification.subject.type;
+    const stateInfo = notification._stateInfo ?? null;
 
-    const typeIcon = new St.Label({
-      text: iconMap[notification.subject.type] || "📌",
-      style_class: "github-tray-notification-type-icon",
-    });
+    // Determine which Octicon SVG to use and which CSS color class to apply
+    let octiconName = "pin-symbolic";        // generic fallback
+    let octiconClass = "github-tray-notification-type-icon";
+    let stateLabel = null;
+
+    if (type === "Issue" || type === "IssueComment") {
+      if (stateInfo?.state === "CLOSED") {
+        octiconName = "issue-closed-symbolic";
+        octiconClass = "github-tray-notification-type-icon octicon-issue-closed";
+        stateLabel = _("Closed");
+      } else {
+        // Default: open (or unknown state)
+        octiconName = "issue-opened-symbolic";
+        octiconClass = "github-tray-notification-type-icon octicon-issue-open";
+        if (stateInfo?.state === "OPEN") stateLabel = _("Open");
+      }
+    } else if (
+      type === "PullRequest" ||
+      type === "PullRequestReview" ||
+      type === "PullRequestReviewComment"
+    ) {
+      if (stateInfo?.isDraft) {
+        octiconName = "pull-request-draft-symbolic";
+        octiconClass = "github-tray-notification-type-icon octicon-pr-draft";
+        stateLabel = _("Draft");
+      } else if (stateInfo?.state === "MERGED") {
+        octiconName = "git-merge-symbolic";
+        octiconClass = "github-tray-notification-type-icon octicon-pr-merged";
+        stateLabel = _("Merged");
+      } else if (stateInfo?.state === "CLOSED") {
+        octiconName = "pull-request-closed-symbolic";
+        octiconClass = "github-tray-notification-type-icon octicon-pr-closed";
+        stateLabel = _("Closed");
+      } else {
+        // Default: open PR (or unknown)
+        octiconName = "pull-request-symbolic";
+        octiconClass = "github-tray-notification-type-icon octicon-pr-open";
+        if (stateInfo?.state === "OPEN") stateLabel = _("Open");
+      }
+    } else if (type === "Commit") {
+      octiconName = "git-commit-symbolic";
+      octiconClass = "github-tray-notification-type-icon octicon-commit";
+    } else if (type === "Release") {
+      octiconName = "tag-symbolic";
+      octiconClass = "github-tray-notification-type-icon octicon-release";
+    } else if (type === "Discussion") {
+      octiconName = "discussion-symbolic";
+      octiconClass = "github-tray-notification-type-icon octicon-discussion";
+    } else if (type === "Mention") {
+      octiconName = "mention-symbolic";
+      octiconClass = "github-tray-notification-type-icon octicon-mention";
+    } else if (type === "Assign") {
+      octiconName = "person-symbolic";
+      octiconClass = "github-tray-notification-type-icon octicon-assign";
+    } else if (type === "ReviewRequested") {
+      octiconName = "eye-symbolic";
+      octiconClass = "github-tray-notification-type-icon octicon-review";
+    } else if (type === "SecurityAlert") {
+      octiconName = "shield-symbolic";
+      octiconClass = "github-tray-notification-type-icon octicon-security";
+    }
+
+    const typeIcon = this._makeOcticonIcon(octiconName, octiconClass);
     topRow.add_child(typeIcon);
+
+    if (stateLabel) {
+      const stateBadge = new St.Label({
+        text: stateLabel,
+        style_class: "github-tray-notification-state-badge",
+      });
+      topRow.add_child(stateBadge);
+    }
 
     const repoLabel = new St.Label({
       text: notification.repository.full_name,
@@ -1143,10 +1422,11 @@ export class GitHubTrayUI {
       vertical: false,
       style_class: "github-tray-stat",
     });
-    const starsIcon = new St.Label({
-      text: "⭐",
-      style_class: "github-tray-stat-icon",
-    });
+    const starsIcon = this._makeOcticonIcon(
+      "star-symbolic",
+      "github-tray-stat-icon octicon-stat-star",
+      "⭐",
+    );
     const starsLabel = new St.Label({
       text: formatNumber(repo.stargazers_count),
       style_class: "github-tray-stat-value",
@@ -1174,10 +1454,11 @@ export class GitHubTrayUI {
       vertical: false,
       style_class: "github-tray-stat",
     });
-    const forksIcon = new St.Label({
-      text: "🍴",
-      style_class: "github-tray-stat-icon",
-    });
+    const forksIcon = this._makeOcticonIcon(
+      "repo-forked-symbolic",
+      "github-tray-stat-icon octicon-stat-fork",
+      "🍴",
+    );
     const forksLabel = new St.Label({
       text: formatNumber(repo.forks_count),
       style_class: "github-tray-stat-value",
@@ -1208,10 +1489,10 @@ export class GitHubTrayUI {
       vertical: false,
       style_class: "github-tray-stat",
     });
-    const issuesIcon = new St.Label({
-      text: "🔴",
-      style_class: "github-tray-stat-icon",
-    });
+    const issuesIcon = this._makeOcticonIcon(
+      "issue-opened-symbolic",
+      "github-tray-stat-icon octicon-stat-issue"
+    );
     const issuesLabel = new St.Label({
       text: formatNumber(repo.open_issues_count),
       style_class: "github-tray-stat-value github-tray-issues-value",
@@ -1277,11 +1558,11 @@ export class GitHubTrayUI {
         style_class: "button github-tray-issues-btn-compact",
         can_focus: true,
       });
-      const issuesIcon = new St.Icon({
-        icon_name: "dialog-warning-symbolic",
-        icon_size: 12,
-        style_class: "github-tray-issues-icon-compact",
-      });
+      const issuesIcon = this._makeOcticonIcon(
+        "issue-opened-symbolic",
+        "github-tray-issues-icon-compact",
+        "🔴",
+      );
       issuesBtnCompact.set_child(issuesIcon);
       issuesBtnCompact.connect("clicked", () => {
         if (this._onFetchIssues) {
@@ -1715,15 +1996,30 @@ export class GitHubTrayUI {
 
     // Update the notifications container in-place if available
     if (this._notificationsContainer) {
-      const maxDisplay = 10;
       const unreadNotifications = notifications.filter((n) => n.unread);
-      const displayNotifications = unreadNotifications.slice(0, maxDisplay);
+      const totalPages = Math.ceil(
+        unreadNotifications.length / NOTIFICATIONS_PAGE_SIZE,
+      );
+
+      // Clamp page after mark-as-read may have reduced total pages
+      if (totalPages > 0 && this._notificationsPage >= totalPages) {
+        this._notificationsPage = totalPages - 1;
+      }
+
+      const start = this._notificationsPage * NOTIFICATIONS_PAGE_SIZE;
+      const displayNotifications = unreadNotifications.slice(
+        start,
+        start + NOTIFICATIONS_PAGE_SIZE,
+      );
 
       this._notificationsContainer.removeAll();
       for (const notification of displayNotifications) {
         const item = this._createNotificationItem(notification);
         this._notificationsContainer.addMenuItem(item);
       }
+
+      // Keep pager controls in sync after a notification is marked as read
+      this._updatePagerControls(this._notificationsPagerItem, totalPages);
       return;
     }
 

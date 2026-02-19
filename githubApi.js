@@ -2,6 +2,7 @@ import Soup from "gi://Soup";
 import GLib from "gi://GLib";
 
 const GITHUB_API_URL = "https://api.github.com";
+const GITHUB_GRAPHQL_URL = "https://api.github.com/graphql";
 
 export class GitHubApi {
   constructor(httpSession) {
@@ -133,7 +134,7 @@ export class GitHubApi {
     return JSON.parse(data);
   }
 
-  async fetchNotifications(token, perPage = 50) {
+  async fetchNotifications(token, perPage = 100) {
     const message = Soup.Message.new(
       "GET",
       `${GITHUB_API_URL}/notifications?per_page=${perPage}`,
@@ -244,6 +245,107 @@ export class GitHubApi {
     }
 
     return true;
+  }
+
+  /**
+   * Fetches the state (open/closed/merged) for a batch of notifications
+   * that refer to Issues or Pull Requests, using a single GraphQL query.
+   *
+   * @param {string} token - GitHub personal access token
+   * @param {Array} notifications - raw notification objects from REST API
+   * @returns {Promise<Map<string, {state: string, isDraft: boolean}>>}
+   *   Map keyed by notification.id with enriched state data
+   */
+  async fetchNotificationStates(token, notifications) {
+    // Build a list of notifications that have a resolvable subject URL
+    const resolvable = notifications.filter((n) => {
+      const type = n.subject?.type;
+      return (
+        (type === "Issue" || type === "PullRequest") && n.subject?.url
+      );
+    });
+
+    if (resolvable.length === 0) return new Map();
+
+    // Extract owner/repo/number from URLs like:
+    // https://api.github.com/repos/{owner}/{repo}/issues/{number}
+    // https://api.github.com/repos/{owner}/{repo}/pulls/{number}
+    const aliases = [];
+    const aliasToId = new Map();
+
+    for (const n of resolvable) {
+      const match = n.subject.url.match(
+        /repos\/([^/]+)\/([^/]+)\/(issues|pulls)\/(\d+)$/,
+      );
+      if (!match) continue;
+
+      const [, owner, repo, , number] = match;
+      const alias = `n${n.id.replace(/\D/g, "")}`;
+      aliasToId.set(alias, n.id);
+
+      if (n.subject.type === "PullRequest") {
+        aliases.push(
+          `${alias}: repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) {
+            pullRequest(number: ${number}) { state isDraft }
+          }`,
+        );
+      } else {
+        aliases.push(
+          `${alias}: repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) {
+            issue(number: ${number}) { state }
+          }`,
+        );
+      }
+    }
+
+    if (aliases.length === 0) return new Map();
+
+    const query = `{ ${aliases.join("\n")} }`;
+
+    const message = Soup.Message.new("POST", GITHUB_GRAPHQL_URL);
+    message.request_headers.append("Authorization", `Bearer ${token}`);
+    message.request_headers.append("Content-Type", "application/json");
+    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+
+    const body = JSON.stringify({ query });
+    const bodyBytes = new TextEncoder().encode(body);
+    message.set_request_body_from_bytes(
+      "application/json",
+      GLib.Bytes.new(bodyBytes),
+    );
+
+    const bytes = await this._httpSession.send_and_read_async(
+      message,
+      GLib.PRIORITY_DEFAULT,
+      null,
+    );
+
+    const statusCode = message.get_status();
+    if (statusCode !== Soup.Status.OK) {
+      throw new Error(`GraphQL HTTP ${statusCode}`);
+    }
+
+    const data = JSON.parse(new TextDecoder().decode(bytes.get_data()));
+    if (data.errors) {
+      console.error("[GitHubApi] GraphQL errors:", JSON.stringify(data.errors));
+    }
+
+    // Build result map: notificationId -> { state, isDraft }
+    const result = new Map();
+    for (const [alias, notifId] of aliasToId) {
+      const repoData = data?.data?.[alias];
+      if (!repoData) continue;
+
+      const item = repoData.pullRequest ?? repoData.issue;
+      if (!item) continue;
+
+      result.set(notifId, {
+        state: item.state ?? null,       // "OPEN" | "CLOSED" | "MERGED"
+        isDraft: item.isDraft ?? false,
+      });
+    }
+
+    return result;
   }
 
   sortRepositories(repos, settings) {

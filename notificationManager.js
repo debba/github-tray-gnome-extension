@@ -38,10 +38,22 @@ export class NotificationManager {
 
       notifications = this._filter(notifications);
 
+      // Enrich notifications with state info (open/closed/merged) via GraphQL
+      try {
+        const stateMap = await api.fetchNotificationStates(token, notifications);
+        for (const n of notifications) {
+          n._stateInfo = stateMap.get(n.id) ?? null;
+        }
+      } catch (graphqlError) {
+        console.error(graphqlError, "GitHubTray:fetchNotificationStates");
+        // Non-fatal: continue without state enrichment
+      }
+
       if (merge && this._lastNotifications.length > 0) {
         // Append only new notifications not already in the buffer
         const existingIds = new Set(this._lastNotifications.map((n) => n.id));
         const newOnes = notifications.filter((n) => !existingIds.has(n.id));
+        // Preserve existing state info, merge new ones with their state
         this._lastNotifications = [...this._lastNotifications, ...newOnes];
       } else {
         const oldUnreadCount = this._unreadCount;
