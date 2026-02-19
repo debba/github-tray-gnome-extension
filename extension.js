@@ -74,8 +74,11 @@ export default class GitHubTrayExtension extends Extension {
       this._httpSession,
     );
     this._ui.setBadgeWidget(null); // this._badge);
-    const { debugBtn } = this._ui.buildMenu(
-      () => this._loadRepositories(true),
+    this._ui.buildMenu(
+      () => {
+        this._loadRepositories(true);
+        this._loadNotifications();
+      },
       () => {
         this.openPreferences();
         this._indicator.menu.close();
@@ -88,7 +91,6 @@ export default class GitHubTrayExtension extends Extension {
       (repo, callback) => this._fetchRepoWorkflowRuns(repo, callback),
       () => this._loadNotifications(),
     );
-    this._debugBtn = debugBtn;
 
     // Menu open state handler
     this._menuOpenChangedId = this._indicator.menu.connect(
@@ -682,13 +684,9 @@ export default class GitHubTrayExtension extends Extension {
       const api = new GitHubApi(this._httpSession);
       await api.markNotificationRead(token, notification.id);
 
-      this._lastNotifications = this._lastNotifications.filter(
-        (n) => n.id !== notification.id,
-      );
-      this._unreadCount = Math.max(0, this._unreadCount - 1);
-      this._ui.updateBadge(this._unreadCount);
-
-      callback();
+      // Reload notifications from the API to reflect the actual server state
+      await this._loadNotifications();
+      this._ui.refreshNotifications(this._lastNotifications);
     } catch (error) {
       console.error(error, "GitHubTray:markNotificationRead");
       callback();
@@ -869,6 +867,5 @@ export default class GitHubTrayExtension extends Extension {
     this._pendingUpdate = null;
     this._pendingDetectChanges = null;
     this._ui = null;
-    this._debugBtn = null;
   }
 }

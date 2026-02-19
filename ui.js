@@ -110,54 +110,16 @@ export class GitHubTrayUI {
     scrollSection.actor.add_child(reposScrollView);
     this._indicator.menu.addMenuItem(scrollSection);
 
-    this._indicator.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-    // Bottom bar: Refresh + Settings
-    const bottomBox = new PopupMenu.PopupBaseMenuItem({
-      reactive: false,
-      can_focus: false,
-    });
-    const bottomLayout = new St.BoxLayout({
-      x_expand: true,
-      x_align: Clutter.ActorAlign.CENTER,
-      style_class: "github-tray-bottom-box",
-      style: "spacing: 8px;",
-    });
-
-    const refreshBtn = new St.Button({
-      label: _("Refresh"),
-      style_class: "button github-tray-btn-primary",
-      can_focus: true,
-    });
-    refreshBtn.connect("clicked", onRefresh);
-    bottomLayout.add_child(refreshBtn);
-
-    const settingsBtn = new St.Button({
-      label: _("Settings"),
-      style_class: "button github-tray-btn-secondary",
-      can_focus: true,
-    });
-    settingsBtn.connect("clicked", onOpenPrefs);
-    bottomLayout.add_child(settingsBtn);
-
-    const debugBtn = new St.Button({
-      label: _("Debug"),
-      style_class: "button github-tray-btn-secondary",
-      can_focus: true,
-      visible: this._settings.get_boolean("debug-mode"),
-    });
-    debugBtn.connect("clicked", onDebug);
-    bottomLayout.add_child(debugBtn);
-    this._debugBtn = debugBtn;
-
-    bottomBox.add_child(bottomLayout);
-    this._indicator.menu.addMenuItem(bottomBox);
+    // Store callbacks for header action buttons
+    this._onRefresh = onRefresh;
+    this._onOpenPrefs = onOpenPrefs;
+    this._onDebug = onDebug;
 
     // Set menu width and max height with scroll
     this._indicator.menu.actor.add_style_class_name("github-tray-menu");
     this._indicator.menu.box.add_style_class_name("github-tray-menu-box");
 
-    return { debugBtn };
+    return {};
   }
 
   updateDebugButtonVisibility() {
@@ -271,6 +233,66 @@ export class GitHubTrayUI {
 
       topRow.add_child(userBox);
 
+      // Spacer to push action buttons to the right
+      const headerSpacer = new St.Widget({ x_expand: true });
+      topRow.add_child(headerSpacer);
+
+      // Header action buttons (refresh, settings, debug)
+      const headerActionsBox = new St.BoxLayout({
+        vertical: false,
+        style: "spacing: 4px;",
+        y_align: Clutter.ActorAlign.CENTER,
+      });
+
+      const refreshBtn = new St.Button({
+        style_class: "button github-tray-header-action-btn",
+        can_focus: true,
+      });
+      const refreshIcon = new St.Icon({
+        icon_name: "view-refresh-symbolic",
+        icon_size: 14,
+        style_class: "github-tray-header-action-icon",
+      });
+      refreshBtn.set_child(refreshIcon);
+      if (this._onRefresh) {
+        refreshBtn.connect("clicked", this._onRefresh);
+      }
+      headerActionsBox.add_child(refreshBtn);
+
+      const settingsBtn = new St.Button({
+        style_class: "button github-tray-header-action-btn",
+        can_focus: true,
+      });
+      const settingsIcon = new St.Icon({
+        icon_name: "preferences-system-symbolic",
+        icon_size: 14,
+        style_class: "github-tray-header-action-icon",
+      });
+      settingsBtn.set_child(settingsIcon);
+      if (this._onOpenPrefs) {
+        settingsBtn.connect("clicked", this._onOpenPrefs);
+      }
+      headerActionsBox.add_child(settingsBtn);
+
+      const debugBtn = new St.Button({
+        style_class: "button github-tray-header-action-btn",
+        can_focus: true,
+        visible: this._settings.get_boolean("debug-mode"),
+      });
+      const debugIcon = new St.Icon({
+        icon_name: "dialog-warning-symbolic",
+        icon_size: 14,
+        style_class: "github-tray-header-action-icon",
+      });
+      debugBtn.set_child(debugIcon);
+      if (this._onDebug) {
+        debugBtn.connect("clicked", this._onDebug);
+      }
+      headerActionsBox.add_child(debugBtn);
+      this._debugBtn = debugBtn;
+
+      topRow.add_child(headerActionsBox);
+
       headerBox.add_child(topRow);
 
       // Second row: badges (centered)
@@ -342,8 +364,7 @@ export class GitHubTrayUI {
       this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
       const showNotifications =
-        this._settings.get_boolean("show-notifications") &&
-        unreadNotifications.length > 0;
+        this._settings.get_boolean("show-notifications");
       const showRepos = repos.length > 0;
 
       console.log(
@@ -412,19 +433,6 @@ export class GitHubTrayUI {
     });
     titleBox.add_child(titleLabel);
 
-    // Refresh button
-    const refreshBtn = new St.Button({
-      label: _("Refresh"),
-      style_class: "button github-tray-link-btn-blue",
-      can_focus: true,
-    });
-    refreshBtn.connect("clicked", () => {
-      if (this._onRefreshNotifications) {
-        this._onRefreshNotifications();
-      }
-    });
-    titleBox.add_child(refreshBtn);
-
     // Open All button
     const openAllBtn = new St.Button({
       label: _("Open All"),
@@ -447,22 +455,35 @@ export class GitHubTrayUI {
     sectionTitle.add_child(titleBox);
     this._headerSection.addMenuItem(sectionTitle);
 
-    for (const notification of displayNotifications) {
-      const item = this._createNotificationItem(notification);
-      this._headerSection.addMenuItem(item);
-    }
-
-    if (notifications.length > maxDisplay) {
-      const moreItem = new PopupMenu.PopupBaseMenuItem({
+    if (notifications.length === 0) {
+      const emptyItem = new PopupMenu.PopupBaseMenuItem({
         reactive: false,
         can_focus: false,
       });
-      const moreLabel = new St.Label({
-        text: _("+ %d more").format(notifications.length - maxDisplay),
-        style_class: "github-tray-notification-more",
+      const emptyLabel = new St.Label({
+        text: _("No unread notifications"),
+        style_class: "github-tray-notification-empty",
       });
-      moreItem.add_child(moreLabel);
-      this._headerSection.addMenuItem(moreItem);
+      emptyItem.add_child(emptyLabel);
+      this._headerSection.addMenuItem(emptyItem);
+    } else {
+      for (const notification of displayNotifications) {
+        const item = this._createNotificationItem(notification);
+        this._headerSection.addMenuItem(item);
+      }
+
+      if (notifications.length > maxDisplay) {
+        const moreItem = new PopupMenu.PopupBaseMenuItem({
+          reactive: false,
+          can_focus: false,
+        });
+        const moreLabel = new St.Label({
+          text: _("+ %d more").format(notifications.length - maxDisplay),
+          style_class: "github-tray-notification-more",
+        });
+        moreItem.add_child(moreLabel);
+        this._headerSection.addMenuItem(moreItem);
+      }
     }
   }
 
@@ -555,25 +576,6 @@ export class GitHubTrayUI {
     const maxDisplay = 5;
     const displayNotifications = notifications.slice(0, maxDisplay);
 
-    // Create a container for both buttons
-    const buttonsBox = new St.BoxLayout({
-      vertical: false,
-      style: "spacing: 4px;",
-    });
-
-    // Refresh button
-    const refreshBtn = new St.Button({
-      label: _("Refresh"),
-      style_class: "github-tray-accordion-action-btn",
-      can_focus: true,
-    });
-    refreshBtn.connect("clicked", () => {
-      if (this._onRefreshNotifications) {
-        this._onRefreshNotifications();
-      }
-    });
-    buttonsBox.add_child(refreshBtn);
-
     // Open All button
     const openAllBtn = new St.Button({
       label: _("Open All"),
@@ -591,7 +593,6 @@ export class GitHubTrayUI {
       }
       this._indicator.menu.close();
     });
-    buttonsBox.add_child(openAllBtn);
 
     const { headerItem, arrowIcon } = this._createAccordionHeader(
       _("Notifications"),
@@ -606,7 +607,7 @@ export class GitHubTrayUI {
         }
       },
       "preferences-system-notifications-symbolic",
-      buttonsBox,
+      openAllBtn,
     );
     this._headerSection.addMenuItem(headerItem);
 
@@ -614,22 +615,35 @@ export class GitHubTrayUI {
     this._notificationsAccordionContent.actor.visible =
       this._notificationsExpanded;
 
-    for (const notification of displayNotifications) {
-      const item = this._createNotificationItem(notification);
-      this._notificationsAccordionContent.addMenuItem(item);
-    }
-
-    if (notifications.length > maxDisplay) {
-      const moreItem = new PopupMenu.PopupBaseMenuItem({
+    if (notifications.length === 0) {
+      const emptyItem = new PopupMenu.PopupBaseMenuItem({
         reactive: false,
         can_focus: false,
       });
-      const moreLabel = new St.Label({
-        text: _("+ %d more").format(notifications.length - maxDisplay),
-        style_class: "github-tray-notification-more",
+      const emptyLabel = new St.Label({
+        text: _("No unread notifications"),
+        style_class: "github-tray-notification-empty",
       });
-      moreItem.add_child(moreLabel);
-      this._notificationsAccordionContent.addMenuItem(moreItem);
+      emptyItem.add_child(emptyLabel);
+      this._notificationsAccordionContent.addMenuItem(emptyItem);
+    } else {
+      for (const notification of displayNotifications) {
+        const item = this._createNotificationItem(notification);
+        this._notificationsAccordionContent.addMenuItem(item);
+      }
+
+      if (notifications.length > maxDisplay) {
+        const moreItem = new PopupMenu.PopupBaseMenuItem({
+          reactive: false,
+          can_focus: false,
+        });
+        const moreLabel = new St.Label({
+          text: _("+ %d more").format(notifications.length - maxDisplay),
+          style_class: "github-tray-notification-more",
+        });
+        moreItem.add_child(moreLabel);
+        this._notificationsAccordionContent.addMenuItem(moreItem);
+      }
     }
 
     this._headerSection.addMenuItem(this._notificationsAccordionContent);
@@ -849,6 +863,25 @@ export class GitHubTrayUI {
   }
 
   _buildReposAccordion(repos) {
+    // Show All button for repositories
+    const showAllBtn = new St.Button({
+      label: _("Show All"),
+      style_class: "github-tray-accordion-action-btn",
+      can_focus: true,
+    });
+    showAllBtn.connect("clicked", () => {
+      try {
+        const username = this._cachedUsername || "";
+        Gio.AppInfo.launch_default_for_uri(
+          `https://github.com/${username}?tab=repositories`,
+          null,
+        );
+      } catch (e) {
+        console.error(e, "GitHubTray:open-repositories");
+      }
+      this._indicator.menu.close();
+    });
+
     const { headerItem, arrowIcon } = this._createAccordionHeader(
       _("Repositories"),
       repos.length,
@@ -861,6 +894,7 @@ export class GitHubTrayUI {
         }
       },
       "folder-documents-symbolic",
+      showAllBtn,
     );
     this._headerSection.addMenuItem(headerItem);
 
@@ -1233,6 +1267,38 @@ export class GitHubTrayUI {
       style: "spacing: 4px;",
     });
 
+    // Issues button (only if there are open issues)
+    if (repo.open_issues_count > 0) {
+      const issuesBtnCompact = new St.Button({
+        style_class: "button github-tray-issues-btn-compact",
+        can_focus: true,
+      });
+      const issuesIcon = new St.Icon({
+        icon_name: "dialog-warning-symbolic",
+        icon_size: 12,
+        style_class: "github-tray-issues-icon-compact",
+      });
+      issuesBtnCompact.set_child(issuesIcon);
+      issuesBtnCompact.connect("clicked", () => {
+        if (this._onFetchIssues) {
+          this._onFetchIssues(repo, (issues) => {
+            this.showIssuesView(repo, issues);
+          });
+        } else {
+          try {
+            Gio.AppInfo.launch_default_for_uri(
+              `${repo.html_url}/issues`,
+              null,
+            );
+          } catch (e) {
+            console.error(e, "GitHubTray:open-issues-compact");
+          }
+          this._indicator.menu.close();
+        }
+      });
+      sideButtonsBox.add_child(issuesBtnCompact);
+    }
+
     // Workflow runs button
     const workflowBtn = new St.Button({
       style_class: "button github-tray-workflow-btn-compact",
@@ -1484,7 +1550,7 @@ export class GitHubTrayUI {
         const labelBox = new St.Label({
           text: label.name,
           style_class: "github-tray-issue-label",
-          style: `background-color: #${label.color};`,
+          style: `color: #${label.color};border: 1px solid #${label.color};background-color:rgba(0,0,0,0);`,
         });
         labelsRow.add_child(labelBox);
       }
@@ -1636,6 +1702,20 @@ export class GitHubTrayUI {
         this._cachedUsername,
         this._cachedUserInfo,
         this._cachedNotifications,
+      );
+    }
+  }
+
+  refreshNotifications(notifications) {
+    this._cachedNotifications = notifications;
+
+    // Re-render the whole menu to update notifications list
+    if (this._cachedRepos && this._cachedUsername) {
+      this.updateMenu(
+        this._cachedRepos,
+        this._cachedUsername,
+        this._cachedUserInfo,
+        notifications,
       );
     }
   }

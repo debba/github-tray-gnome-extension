@@ -34,9 +34,8 @@
     font-size: 10px;
 }
 
-.github-tray-font-medium .github-tray-btn-primary,
-.github-tray-font-medium .github-tray-btn-secondary {
-    font-size: 12px;
+.github-tray-font-medium .github-tray-header-action-icon {
+    icon-size: 15px;
 }
 
 .github-tray-font-medium .github-tray-link-btn,
@@ -99,9 +98,8 @@
     font-size: 11px;
 }
 
-.github-tray-font-large .github-tray-btn-primary,
-.github-tray-font-large .github-tray-btn-secondary {
-    font-size: 13px;
+.github-tray-font-large .github-tray-header-action-icon {
+    icon-size: 16px;
 }
 
 .github-tray-font-large .github-tray-link-btn,
@@ -246,7 +244,7 @@
 /* ── Menu container ─────────────────────────────────────────── */
 
 .github-tray-menu {
-    max-width: 340px;
+    width: 340px;
 }
 
 .github-tray-menu-box {
@@ -257,7 +255,6 @@
 
 .github-tray-scrollview {
     max-height: 420px;
-    min-width: 340px;
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
@@ -281,7 +278,7 @@
 .github-tray-header-avatar {
     border-radius: 50px;
     border: 1px solid #30363d;
-    background-color: #0d1117;
+    background-color: transparent;
 }
 
 .github-tray-header-user {
@@ -350,6 +347,31 @@
     font-weight: 600;
     color: #d29922;
     y-align: center;
+}
+
+/* ── Header action buttons (refresh, settings, debug) ────────── */
+
+.github-tray-header-action-btn {
+    padding: 4px;
+    min-width: 24px;
+    min-height: 24px;
+    background-color: rgba(48, 54, 61, 0.4);
+    border-radius: 6px;
+    border: 1px solid rgba(48, 54, 61, 0.6);
+}
+
+.github-tray-header-action-btn:hover {
+    background-color: rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.4);
+}
+
+.github-tray-header-action-icon {
+    color: #8b949e;
+    icon-size: 14px;
+}
+
+.github-tray-header-action-btn:hover .github-tray-header-action-icon {
+    color: #58a6ff;
 }
 
 /* ── Repo list item (PopupBaseMenuItem wrapper) ─────────────── */
@@ -547,6 +569,7 @@
 
 /* ── Side action buttons (workflow, folder) - Compact version ─── */
 
+.github-tray-issues-btn-compact,
 .github-tray-workflow-btn-compact,
 .github-tray-folder-btn-compact {
     padding: 3px;
@@ -583,6 +606,17 @@
     icon-size: 12px;
 }
 
+.github-tray-issues-btn-compact:hover {
+    background-color: rgba(248, 81, 73, 0.15);
+    border: 1px solid rgba(248, 81, 73, 0.4);
+    box-shadow: 0 0 6px rgba(248, 81, 73, 0.2);
+}
+
+.github-tray-issues-icon-compact {
+    color: #f85149;
+    icon-size: 12px;
+}
+
 /* ── Description ────────────────────────────────────────────── */
 
 .github-tray-description {
@@ -600,48 +634,7 @@
     spacing: 4px;
 }
 
-/* ── Bottom bar ─────────────────────────────────────────────── */
-
-.github-tray-bottom-box {
-    padding: 6px 8px;
-    margin: 0 4px;
-}
-
-/* ── Buttons ────────────────────────────────────────────────── */
-
-.github-tray-btn-primary {
-    min-width: 90px;
-    padding: 6px 16px;
-    background-color: #238636;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 11px;
-    color: #ffffff;
-    border: 1px solid rgba(46, 160, 67, 0.4);
-}
-
-.github-tray-btn-primary:hover {
-    background-color: #2ea043;
-    border: 1px solid rgba(46, 160, 67, 0.6);
-    box-shadow: 0 2px 8px rgba(46, 160, 67, 0.25);
-}
-
-.github-tray-btn-secondary {
-    min-width: 90px;
-    padding: 6px 16px;
-    background-color: rgba(33, 38, 45, 0.8);
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 11px;
-    color: #c9d1d9;
-    border: 1px solid rgba(240, 246, 252, 0.1);
-}
-
-.github-tray-btn-secondary:hover {
-    background-color: #30363d;
-    border: 1px solid rgba(240, 246, 252, 0.2);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
+/* ── (Bottom bar removed – buttons moved to header) ────────── */
 
 /* ── Separator styling ──────────────────────────────────────── */
 
@@ -801,6 +794,13 @@
     padding: 4px 0;
 }
 
+.github-tray-notification-empty {
+    font-size: 10px;
+    color: #6e7681;
+    font-style: italic;
+    padding: 8px 4px;
+}
+
 /* ── Notification item ───────────────────────────────────────── */
 
 .github-tray-notification-item {
@@ -857,13 +857,15 @@
 }
 
 .github-tray-mark-read-btn {
-    padding: 2px 6px;
+    padding: 3px;
+    min-width: 20px;
+    min-height: 20px;
     background-color: rgba(35, 134, 54, 0.15);
-    border-radius: 4px;
+    border-radius: 5px;
     color: #3fb950;
     border: 1px solid rgba(35, 134, 54, 0.3);
     font-size: 10px;
-    min-width: 20px;
+    margin-left: 6px;
 }
 
 .github-tray-mark-read-btn:hover {
