@@ -62,6 +62,15 @@ export class RefreshManager {
     );
   }
 
+  // Restarts the notification refresh timer (e.g. when show-notifications setting changes)
+  restartNotificationRefresh() {
+    if (this._notificationRefreshTimeout) {
+      GLib.source_remove(this._notificationRefreshTimeout);
+      this._notificationRefreshTimeout = null;
+    }
+    this.setupNotificationRefresh();
+  }
+
   // Removes all active refresh timers
   cleanup() {
     if (this._refreshTimeout) {

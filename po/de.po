@@ -90,6 +90,64 @@ msgstr "Warte auf Netzwerkverbindung..."
 msgid "No repositories found"
 msgstr "Keine Repositories gefunden"
 
+# ui.js
+msgid "Open All"
+msgstr "Alle öffnen"
+
+msgid "No unread notifications"
+msgstr "Keine ungelesenen Benachrichtigungen"
+
+msgid "Re-run"
+msgstr "Erneut ausführen"
+
+msgid "Running..."
+msgstr "Läuft..."
+
+msgid "Failed"
+msgstr "Fehlgeschlagen"
+
+msgid "In progress..."
+msgstr "In Bearbeitung..."
+
+msgid "Queued"
+msgstr "In der Warteschlange"
+
+msgid "Success • %s"
+msgstr "Erfolgreich • %s"
+
+msgid "Failed • %s"
+msgstr "Fehlgeschlagen • %s"
+
+msgid "Cancelled"
+msgstr "Abgebrochen"
+
+msgid "Skipped"
+msgstr "Übersprungen"
+
+msgid "Completed"
+msgstr "Abgeschlossen"
+
+msgid "Show All"
+msgstr "Alle anzeigen"
+
+msgid "Repositories"
+msgstr "Repositories"
+
+msgid "← Back"
+msgstr "← Zurück"
+
+msgid "Issues"
+msgstr "Issues"
+
+msgid "No open issues"
+msgstr "Keine offenen Issues"
+
+msgid "Workflow Runs"
+msgstr "Workflow-Ausführungen"
+
+msgid "No workflow runs found"
+msgstr "Keine Workflow-Ausführungen gefunden"
+
 msgid "just now"
 msgstr "gerade eben"
 

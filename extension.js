@@ -382,6 +382,24 @@ export default class GitHubTrayExtension extends Extension {
           return;
         }
 
+        if (key === "show-notifications" && this._ui) {
+          // Rebuild the menu immediately to reflect the new setting
+          if (this._lastRepos) {
+            const username = this._settings.get_string("github-username");
+            const notifications =
+              this._notificationManager?.lastNotifications ?? [];
+            this._ui.updateMenu(
+              this._lastRepos,
+              username,
+              this._ui._cachedUserInfo,
+              notifications,
+            );
+          }
+          // Start or stop the notification refresh timer accordingly
+          this._refreshManager?.restartNotificationRefresh();
+          return;
+        }
+
         if (
           ![
             "github-token",

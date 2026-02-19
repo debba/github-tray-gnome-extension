@@ -388,6 +388,84 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
+#: ui.js
+msgid "Open All"
+msgstr ""
+
+#: ui.js
+msgid "No unread notifications"
+msgstr ""
+
+#: ui.js
+msgid "Re-run"
+msgstr ""
+
+#: ui.js
+msgid "Running..."
+msgstr ""
+
+#: ui.js
+msgid "Failed"
+msgstr ""
+
+#: ui.js
+msgid "In progress..."
+msgstr ""
+
+#: ui.js
+msgid "Queued"
+msgstr ""
+
+#: ui.js
+#, javascript-format
+msgid "Success • %s"
+msgstr ""
+
+#: ui.js
+#, javascript-format
+msgid "Failed • %s"
+msgstr ""
+
+#: ui.js
+msgid "Cancelled"
+msgstr ""
+
+#: ui.js
+msgid "Skipped"
+msgstr ""
+
+#: ui.js
+msgid "Completed"
+msgstr ""
+
+#: ui.js
+msgid "Show All"
+msgstr ""
+
+#: ui.js
+msgid "Repositories"
+msgstr ""
+
+#: ui.js
+msgid "← Back"
+msgstr ""
+
+#: ui.js
+msgid "Issues"
+msgstr ""
+
+#: ui.js
+msgid "No open issues"
+msgstr ""
+
+#: ui.js
+msgid "Workflow Runs"
+msgstr ""
+
+#: ui.js
+msgid "No workflow runs found"
+msgstr ""
+
 #: extension.js:110
 msgid "Configure token and username in Settings"
 msgstr ""
