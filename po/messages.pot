@@ -466,6 +466,22 @@ msgstr ""
 msgid "No workflow runs found"
 msgstr ""
 
+#: ui.js
+msgid "Closed"
+msgstr ""
+
+#: ui.js
+msgid "Open"
+msgstr ""
+
+#: ui.js
+msgid "Draft"
+msgstr ""
+
+#: ui.js
+msgid "Merged"
+msgstr ""
+
 #: extension.js:110
 msgid "Configure token and username in Settings"
 msgstr ""

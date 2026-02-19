@@ -148,6 +148,18 @@ msgstr "Workflow-Ausführungen"
 msgid "No workflow runs found"
 msgstr "Keine Workflow-Ausführungen gefunden"
 
+msgid "Closed"
+msgstr "Geschlossen"
+
+msgid "Open"
+msgstr "Offen"
+
+msgid "Draft"
+msgstr "Entwurf"
+
+msgid "Merged"
+msgstr "Zusammengeführt"
+
 msgid "just now"
 msgstr "gerade eben"
 
