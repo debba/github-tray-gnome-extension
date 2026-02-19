@@ -611,7 +611,6 @@ export default class GitHubTrayExtension extends Extension {
         const newOnes = notifications.filter((n) => !existingIds.has(n.id));
         this._lastNotifications = [...this._lastNotifications, ...newOnes];
       } else {
-        // Full replace mode (initial load or periodic refresh)
         const oldUnreadCount = this._unreadCount;
         this._lastNotifications = notifications;
 
