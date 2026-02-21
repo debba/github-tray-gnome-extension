@@ -21,6 +21,10 @@ export class RefreshManager {
 
   // Starts periodic repository refresh (every 5 minutes)
   setupAutoRefresh() {
+    if (this._refreshTimeout) {
+      GLib.source_remove(this._refreshTimeout);
+      this._refreshTimeout = null;
+    }
     this._refreshTimeout = GLib.timeout_add_seconds(
       GLib.PRIORITY_DEFAULT,
       300,
@@ -34,6 +38,11 @@ export class RefreshManager {
   // Starts periodic notification refresh based on the configured interval
   setupNotificationRefresh() {
     if (!this._settings.get_boolean("show-notifications")) return;
+
+    if (this._notificationRefreshTimeout) {
+      GLib.source_remove(this._notificationRefreshTimeout);
+      this._notificationRefreshTimeout = null;
+    }
 
     this._loadNotifications();
     const interval = this._settings.get_int("notification-interval");
@@ -51,6 +60,11 @@ export class RefreshManager {
 
   // Starts periodic monitored workflow refresh (every 5 minutes)
   setupMonitoredWorkflowRefresh() {
+    if (this._monitoredWorkflowRefreshTimeout) {
+      GLib.source_remove(this._monitoredWorkflowRefreshTimeout);
+      this._monitoredWorkflowRefreshTimeout = null;
+    }
+
     const interval = 300;
     this._monitoredWorkflowRefreshTimeout = GLib.timeout_add_seconds(
       GLib.PRIORITY_DEFAULT,

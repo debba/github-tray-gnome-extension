@@ -518,9 +518,16 @@ export default class GitHubTrayExtension extends Extension {
 
   _cleanupState() {
     this._notificationManager?.destroy();
+    this._notificationManager = null;
+    
     this._workflowManager?.destroy();
+    this._workflowManager = null;
+    
     this._refreshManager?.destroy();
+    this._refreshManager = null;
+    
     this._changeDetector?.destroy();
+    this._changeDetector = null;
 
     this._httpSession.abort();
     this._httpSession = null;

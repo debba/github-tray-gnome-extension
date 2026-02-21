@@ -20,6 +20,7 @@ export class WorkflowManager {
 
     // Map<repoFullName, workflowRuns[]>
     this._monitoredWorkflowRuns = new Map();
+    this._rerunTimeout = null;
   }
 
   get monitoredWorkflowRuns() {
@@ -115,8 +116,13 @@ export class WorkflowManager {
       await api.rerunWorkflow(token, owner, repo, workflowRun.id);
 
       // Refresh monitored workflow runs after a short delay
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
+      if (this._rerunTimeout) {
+        GLib.source_remove(this._rerunTimeout);
+        this._rerunTimeout = null;
+      }
+      this._rerunTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
         this.loadMonitored();
+        this._rerunTimeout = null;
         return GLib.SOURCE_REMOVE;
       });
 
@@ -203,6 +209,10 @@ export class WorkflowManager {
   }
 
   destroy() {
+    if (this._rerunTimeout) {
+      GLib.source_remove(this._rerunTimeout);
+      this._rerunTimeout = null;
+    }
     this._monitoredWorkflowRuns.clear();
     this._httpSession = null;
     this._settings = null;
