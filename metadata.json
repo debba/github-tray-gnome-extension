@@ -1,7 +1,7 @@
 {
   "uuid": "github-tray@debba.github.com",
   "name": "GitHub Tray",
-  "description": "Display your GitHub repositories and Actions workflows in the system tray with real-time status updates",
+  "description": "Display your GitHub repositories, notifications, and Actions workflows in the system tray with real-time status updates and inline management.",
   "version": 9,
   "shell-version": ["45", "46", "47", "48", "49"],
   "url": "https://github.com/debba/github-tray-gnome-extension",
