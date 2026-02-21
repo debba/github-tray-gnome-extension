@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Tray - Glassmorphism Promo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        :root {
+            --bg-dark: #050505;
+            --gh-blue: #2f81f7;
+            --gh-purple: #8250df;
+            --gh-green: #238636;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background-color: #1a1a1a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header-info {
+            color: #fff;
+            text-align: center;
+            max-width: 600px;
+            background: #111;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        .header-info h2 { margin: 0 0 10px 0; color: var(--gh-blue); font-weight: 700; }
+        .header-info p { color: #888; margin: 0; line-height: 1.5; font-size: 14px;}
+        
+        /* Base Canvas Styles */
+        .canvas {
+            position: relative;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.9);
+            border-radius: 24px;
+            flex-shrink: 0;
+            transform-origin: top center;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(47, 129, 247, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(130, 80, 223, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 120%, rgba(35, 134, 54, 0.05) 0%, transparent 50%);
+        }
+
+        /* Ambient glowing orbs to give depth without being messy */
+        .orb-1, .orb-2, .orb-3 {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 1;
+            opacity: 0.6;
+        }
+        
+        /* Full HD 1920x1080 */
+        .canvas-1080p {
+            width: 1920px;
+            height: 1080px;
+            transform: scale(0.6);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 120px;
+            box-sizing: border-box;
+        }
+        
+        .canvas-1080p .orb-1 { width: 400px; height: 400px; background: var(--gh-blue); top: 20%; left: 10%; }
+        .canvas-1080p .orb-2 { width: 500px; height: 500px; background: var(--gh-purple); bottom: 10%; left: 30%; }
+        .canvas-1080p .orb-3 { width: 300px; height: 300px; background: var(--gh-green); top: 40%; right: 20%; }
+
+        /* Promo / OpenGraph 1280x640 */
+        .canvas-720p {
+            width: 1280px;
+            height: 640px;
+            transform: scale(0.8);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 80px;
+            box-sizing: border-box;
+        }
+
+        .canvas-720p .orb-1 { width: 250px; height: 250px; background: var(--gh-blue); top: 20%; left: 10%; filter: blur(60px); }
+        .canvas-720p .orb-2 { width: 300px; height: 300px; background: var(--gh-purple); bottom: 10%; left: 30%; filter: blur(60px); }
+        .canvas-720p .orb-3 { width: 200px; height: 200px; background: var(--gh-green); top: 40%; right: 20%; filter: blur(60px); }
+
+        /* ---- TEXT CONTENT (LEFT SIDE) ---- */
+        .text-content-1080 {
+            position: relative;
+            z-index: 10;
+            width: 650px;
+            flex-shrink: 0;
+        }
+
+        .title-1080 {
+            font-size: 110px;
+            font-weight: 800;
+            letter-spacing: -3px;
+            margin: 0 0 20px 0;
+            line-height: 1.05;
+            color: #fff;
+        }
+
+        .highlight-gradient { 
+            background: linear-gradient(90deg, #2f81f7 0%, #8250df 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .claim-1080 {
+            font-size: 34px;
+            font-weight: 500;
+            color: #a1a1aa;
+            line-height: 1.4;
+            margin: 0 0 50px 0;
+        }
+        
+        .claim-1080 strong { color: #fff; font-weight: 600; }
+
+        .text-content-720 {
+            position: relative;
+            z-index: 10;
+            width: 450px;
+            flex-shrink: 0;
+        }
+
+        .title-720 {
+            font-size: 70px;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin: 0 0 15px 0;
+            line-height: 1.05;
+            color: #fff;
+        }
+
+        .claim-720 {
+            font-size: 22px;
+            font-weight: 500;
+            color: #a1a1aa;
+            line-height: 1.4;
+            margin: 0 0 30px 0;
+        }
+        
+        .claim-720 strong { color: #fff; font-weight: 600; }
+
+        /* Feature List */
+        .feature-list-1080 {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .feature-item-1080 {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 26px;
+            font-weight: 600;
+            color: #e4e4e7;
+            padding: 15px 25px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            width: max-content;
+        }
+
+        .feature-list-720 {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .feature-item-720 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e4e4e7;
+            padding: 10px 18px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            width: max-content;
+        }
+
+        .icon-circle {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icon-circle svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 2.5px; }
+        
+        .icon-circle-720 {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icon-circle-720 svg { width: 14px; height: 14px; stroke: #fff; stroke-width: 2.5px; }
+
+        .bg-purple { background: var(--gh-purple); box-shadow: 0 0 15px rgba(130, 80, 223, 0.4); }
+        .bg-blue { background: var(--gh-blue); box-shadow: 0 0 15px rgba(47, 129, 247, 0.4); }
+        .bg-green { background: var(--gh-green); box-shadow: 0 0 15px rgba(35, 134, 54, 0.4); }
+
+        /* ---- DYNAMIC UI PRESENTATION (RIGHT SIDE) ---- */
+        .presentation-container-1080 {
+            position: relative;
+            width: 800px;
+            height: 900px;
+            z-index: 10;
+        }
+
+        .presentation-container-720 {
+            position: relative;
+            width: 550px;
+            height: 550px;
+            z-index: 10;
+        }
+
+        /* Glass Panel Base */
+        .glass-panel {
+            position: absolute;
+            border-radius: 20px;
+            background: rgba(20, 25, 30, 0.6); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.25);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .glass-panel img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+            display: block;
+            border-radius: 18px; 
+        }
+
+        /* Posizionamento "Floating" Asimmetrico (1080p) */
+        .panel-main-1080 {
+            width: 350px;
+            height: 850px;
+            top: 25px;
+            left: 200px; 
+            z-index: 15;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+            transform: translateZ(50px);
+        }
+        
+        .panel-main-1080 img {
+            background-color: #1a1e24; 
+        }
+
+        .panel-back-left-1080 {
+            width: 320px;
+            height: 550px;
+            top: 80px;
+            left: -30px;
+            z-index: 5;
+            transform: scale(0.9) rotate(-3deg);
+            opacity: 0.9;
+        }
+
+        .panel-back-right-1080 {
+            width: 320px;
+            height: 600px;
+            bottom: 40px;
+            right: 0px;
+            z-index: 20; 
+            transform: scale(0.95) rotate(2deg);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+        }
+
+        /* Posizionamento "Floating" Asimmetrico (720p) */
+        .panel-main-720 {
+            width: 220px;
+            height: 520px;
+            top: 15px;
+            left: 140px;
+            z-index: 15;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+        }
+        
+        .panel-main-720 img {
+            object-fit: contain;
+            background-color: #1a1e24;
+        }
+
+        .panel-back-left-720 {
+            width: 200px;
+            height: 350px;
+            top: 40px;
+            left: -20px;
+            z-index: 5;
+            transform: scale(0.9) rotate(-3deg);
+            opacity: 0.9;
+        }
+
+        .panel-back-right-720 {
+            width: 210px;
+            height: 400px;
+            bottom: 20px;
+            right: 0px;
+            z-index: 20;
+            transform: scale(0.95) rotate(2deg);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-info">
+        <h2>✨ Modern SaaS "Floating" Style</h2>
+        <p>Il titolo è stato semplificato e "Pro workflow" rimosso in favore di un molto più diretto <strong>"GNOME Extension"</strong> in un meraviglioso gradiente.<br> Il focus rimane completamente sull'estetica moderna SaaS e le feature del tuo incredibile plugin!</p>
+    </div>
+
+    <!-- ==========================================
+         1920x1080 FULL HD CANVAS 
+         ========================================== -->
+    <div class="canvas canvas-1080p" id="promo-1080p">
+        <!-- SFONDO GLOW -->
+        <div class="orb-1"></div>
+        <div class="orb-2"></div>
+        <div class="orb-3"></div>
+
+        <!-- TESTI (SINISTRA) -->
+        <div class="text-content-1080">
+            <h1 class="title-1080">GitHub Tray<br><span class="highlight-gradient">GNOME Extension</span></h1>
+            <p class="claim-1080">The entire GitHub universe natively integrated into your <strong>GNOME desktop</strong> panel.</p>
+            
+            <div class="feature-list-1080">
+                <div class="feature-item-1080">
+                    <div class="icon-circle bg-purple">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    Track your Issues
+                </div>
+                <div class="feature-item-1080">
+                    <div class="icon-circle bg-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    </div>
+                    Read Notifications
+                </div>
+                <div class="feature-item-1080">
+                    <div class="icon-circle bg-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    Monitor CI/CD Actions
+                </div>
+            </div>
+        </div>
+
+        <!-- MOCKUP "FLOATING GLASS" (DESTRA) -->
+        <div class="presentation-container-1080">
+            <!-- Dietro a Sinistra (Issues) -->
+            <div class="glass-panel panel-back-left-1080">
+                <img src="screenshot-3.png" alt="Issues">
+            </div>
+
+            <!-- Centro in Primo Piano (Notifiche LUNGA INTERA) -->
+            <div class="glass-panel panel-main-1080">
+                <img src="screnshot-1.png" alt="Notifications">
+            </div>
+
+            <!-- Davanti a Destra, in basso (Workflow Runs) -->
+            <div class="glass-panel panel-back-right-1080">
+                <img src="screenshot-2.png" alt="Workflow Runs">
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         1280x640 OPEN GRAPH / SOCIAL CANVAS 
+         ========================================== -->
+    <div class="canvas canvas-720p" id="promo-720p">
+        <!-- SFONDO GLOW -->
+        <div class="orb-1"></div>
+        <div class="orb-2"></div>
+        <div class="orb-3"></div>
+
+        <!-- TESTI (SINISTRA) -->
+        <div class="text-content-720">
+            <h1 class="title-720">GitHub Tray<br><span class="highlight-gradient">GNOME Extension</span></h1>
+            <p class="claim-720">The entire GitHub universe natively integrated into your <strong>GNOME desktop</strong> panel.</p>
+            
+            <div class="feature-list-720">
+                <div class="feature-item-720">
+                    <div class="icon-circle-720 bg-purple">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    Track your Issues
+                </div>
+                <div class="feature-item-720">
+                    <div class="icon-circle-720 bg-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    </div>
+                    Read Notifications
+                </div>
+                <div class="feature-item-720">
+                    <div class="icon-circle-720 bg-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    Monitor CI/CD Actions
+                </div>
+            </div>
+        </div>
+
+        <!-- MOCKUP "FLOATING GLASS" (DESTRA) -->
+        <div class="presentation-container-720">
+            <!-- Dietro a Sinistra (Issues) -->
+            <div class="glass-panel panel-back-left-720">
+                <img src="screenshot-3.png" alt="Issues">
+            </div>
+
+            <!-- Centro in Primo Piano (Notifiche LUNGA INTERA) -->
+            <div class="glass-panel panel-main-720">
+                <img src="screnshot-1.png" alt="Notifications">
+            </div>
+
+            <!-- Davanti a Destra, in basso (Workflow Runs) -->
+            <div class="glass-panel panel-back-right-720">
+                <img src="screenshot-2.png" alt="Workflow Runs">
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
