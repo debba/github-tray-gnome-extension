@@ -44,7 +44,6 @@ export class RefreshManager {
       this._notificationRefreshTimeout = null;
     }
 
-    this._loadNotifications();
     const interval = this._settings.get_int("notification-interval");
     this._notificationRefreshTimeout = GLib.timeout_add_seconds(
       GLib.PRIORITY_DEFAULT,
@@ -83,6 +82,9 @@ export class RefreshManager {
       this._notificationRefreshTimeout = null;
     }
     this.setupNotificationRefresh();
+    if (this._settings.get_boolean("show-notifications")) {
+      this._loadNotifications();
+    }
   }
 
   // Removes all active refresh timers

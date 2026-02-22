@@ -151,6 +151,7 @@ export default class GitHubTrayExtension extends Extension {
 
     this._isLoading = true;
     const wasOpen = this._indicator.menu.isOpen;
+    const isFirstLoad = !this._lastRepos;
 
     if (!this._indicator.menu.isOpen) {
       this._ui.showMessage(_("Loading repositories..."));
@@ -158,11 +159,18 @@ export default class GitHubTrayExtension extends Extension {
 
     try {
       const api = new GitHubApi(this._httpSession);
-      const [repos, userInfo, followers] = await Promise.all([
+      const promises = [
         api.fetchRepositories(token, username, this._settings),
         api.fetchUserInfo(token, username),
         api.fetchFollowers(token),
-      ]);
+      ];
+
+      // On first load, fetch notifications concurrently so everything appears together
+      if (isFirstLoad && this._settings.get_boolean("show-notifications")) {
+        promises.push(this._notificationManager.load());
+      }
+
+      const [repos, userInfo, followers] = await Promise.all(promises);
 
       if (!this._indicator) return;
 
