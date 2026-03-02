@@ -1,12 +1,27 @@
 import { GitHubApi } from "./githubApi.js";
-import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
+import { gettext as _, ngettext } from "resource:///org/gnome/shell/extensions/extension.js";
+
+/**
+ * Converts a GitHub REST API subject URL to its corresponding web URL.
+ * e.g. https://api.github.com/repos/owner/repo/pulls/1 → https://github.com/owner/repo/pull/1
+ *
+ * @param {string|null|undefined} apiUrl
+ * @returns {string|null}
+ */
+function _subjectApiToWebUrl(apiUrl) {
+  if (!apiUrl) return null;
+  return apiUrl
+    .replace("https://api.github.com/repos/", "https://github.com/")
+    .replace(/\/pulls\/(\d+)$/, "/pull/$1")
+    .replace(/\/commits\/([a-f0-9]+)$/, "/commit/$1");
+}
 
 export class NotificationManager {
   /**
    * @param {object} opts
    * @param {import('gi://Soup').Session} opts.httpSession
    * @param {import('gi://Gio').Settings} opts.settings
-   * @param {function(string, string): void} opts.sendNotification
+   * @param {function(string, string, string|null): void} opts.sendNotification
    * @param {object} opts.ui  - GitHubTrayUI instance
    */
   constructor({ httpSession, settings, sendNotification, ui }) {
@@ -56,6 +71,7 @@ export class NotificationManager {
         // Preserve existing state info, merge new ones with their state
         this._lastNotifications = [...this._lastNotifications, ...newOnes];
       } else {
+        const oldIds = new Set(this._lastNotifications.map((n) => n.id));
         const oldUnreadCount = this._unreadCount;
         this._lastNotifications = notifications;
 
@@ -70,6 +86,16 @@ export class NotificationManager {
         ) {
           const newCount = unreadCount - oldUnreadCount;
           if (newCount > 0) {
+            // Determine the URL to open: specific page for a single new
+            // notification, or the general notifications page for multiple
+            const newUnread = notifications.filter(
+              (n) => n.unread && !oldIds.has(n.id),
+            );
+            let url = "https://github.com/notifications";
+            if (newUnread.length === 1) {
+              url =
+                _subjectApiToWebUrl(newUnread[0].subject?.url) ?? url;
+            }
             this._sendNotification(
               _("GitHub Notifications"),
               ngettext(
@@ -77,6 +103,7 @@ export class NotificationManager {
                 "%d new notifications",
                 newCount,
               ).format(newCount),
+              url,
             );
           }
         }

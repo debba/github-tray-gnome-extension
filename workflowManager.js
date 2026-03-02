@@ -148,6 +148,7 @@ export class WorkflowManager {
           this._sendNotification(
             _("GitHub Actions: Workflow Started"),
             `${repo.name} • ${newRun.name}\n${newRun.head_branch}`,
+            newRun.html_url ?? null,
           );
         }
         continue;
@@ -161,6 +162,7 @@ export class WorkflowManager {
             this._sendNotification(
               _("GitHub Actions: Workflow Succeeded"),
               `${repo.name} • ${newRun.name}\n${duration}`,
+              newRun.html_url ?? null,
             );
           }
         } else if (
@@ -171,6 +173,7 @@ export class WorkflowManager {
             this._sendNotification(
               _("GitHub Actions: Workflow Failed"),
               `${repo.name} • ${newRun.name}\n${newRun.head_branch}`,
+              newRun.html_url ?? null,
             );
           }
         } else if (
@@ -181,6 +184,7 @@ export class WorkflowManager {
             this._sendNotification(
               _("GitHub Actions: Workflow Cancelled"),
               `${repo.name} • ${newRun.name}`,
+              newRun.html_url ?? null,
             );
           }
         }

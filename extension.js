@@ -112,14 +112,14 @@ export default class GitHubTrayExtension extends Extension {
     this._notificationManager = new NotificationManager({
       httpSession: this._httpSession,
       settings: this._settings,
-      sendNotification: (summary, body) => sendNotification(summary, body),
+      sendNotification: (summary, body, url) => sendNotification(summary, body, url),
       ui: this._ui,
     });
 
     this._workflowManager = new WorkflowManager({
       httpSession: this._httpSession,
       settings: this._settings,
-      sendNotification: (summary, body) => sendNotification(summary, body),
+      sendNotification: (summary, body, url) => sendNotification(summary, body, url),
       getMonitoredRepos: () => this._getMonitoredRepos(),
       isMenuOpen,
     });

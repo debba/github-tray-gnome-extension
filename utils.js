@@ -46,17 +46,17 @@ export function detectChanges(newRepos, oldRepos) {
     if (repo.stargazers_count > oldData.stars) {
       const diff = repo.stargazers_count - oldData.stars;
       totalNewStars += diff;
-      starsGained.push({ name: repo.name, diff: diff });
+      starsGained.push({ name: repo.name, diff: diff, html_url: repo.html_url });
     }
 
     if (repo.open_issues_count > oldData.issues) {
       const diff = repo.open_issues_count - oldData.issues;
-      newIssues.push({ name: repo.name, diff: diff });
+      newIssues.push({ name: repo.name, diff: diff, html_url: repo.html_url });
     }
 
     if (repo.forks_count > oldData.forks) {
       const diff = repo.forks_count - oldData.forks;
-      newForks.push({ name: repo.name, diff: diff });
+      newForks.push({ name: repo.name, diff: diff, html_url: repo.html_url });
     }
   }
 
