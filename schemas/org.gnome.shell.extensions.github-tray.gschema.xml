@@ -6,6 +6,11 @@
       <summary>GitHub Personal Access Token</summary>
       <description>Token for GitHub API access</description>
     </key>
+    <key name="github-enterprise-url" type="s">
+      <default>''</default>
+      <summary>GitHub Enterprise Server URL</summary>
+      <description>Base URL for GitHub Enterprise Server (e.g. https://github.mycompany.com). Leave empty for github.com.</description>
+    </key>
     <key name="github-username" type="s">
       <default>''</default>
       <summary>GitHub Username</summary>

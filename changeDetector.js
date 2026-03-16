@@ -84,7 +84,7 @@ export class ChangeDetector {
           : `+${newFollowersList.length} followers`;
       const followersUrl =
         newFollowersList.length === 1
-          ? `https://github.com/${newFollowersList[0].login}`
+          ? (newFollowersList[0].html_url ?? null)
           : null;
       this._send(_("New Followers"), followersMsg, followersUrl);
     }

@@ -37,7 +37,7 @@ export class WorkflowManager {
     }
 
     try {
-      const api = new GitHubApi(this._httpSession);
+      const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const [owner, repoName] = repo.full_name.split("/");
       const maxRuns = this._settings.get_int("workflow-runs-max-display") || 10;
       console.log(
@@ -74,7 +74,7 @@ export class WorkflowManager {
       `[GitHubTray] Loading workflow runs for ${monitoredRepos.length} monitored repos`,
     );
 
-    const api = new GitHubApi(this._httpSession);
+    const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
 
     for (const repo of monitoredRepos) {
       try {
@@ -111,7 +111,7 @@ export class WorkflowManager {
     }
 
     try {
-      const api = new GitHubApi(this._httpSession);
+      const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const [owner, repo] = workflowRun.repository_full_name.split("/");
       await api.rerunWorkflow(token, owner, repo, workflowRun.id);
 

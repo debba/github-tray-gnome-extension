@@ -1,18 +1,27 @@
 import Soup from "gi://Soup";
 import GLib from "gi://GLib";
 
-const GITHUB_API_URL = "https://api.github.com";
-const GITHUB_GRAPHQL_URL = "https://api.github.com/graphql";
+const DEFAULT_API_URL = "https://api.github.com";
+const DEFAULT_GRAPHQL_URL = "https://api.github.com/graphql";
 
 export class GitHubApi {
-  constructor(httpSession) {
+  constructor(httpSession, enterpriseUrl = "") {
     this._httpSession = httpSession;
+
+    if (enterpriseUrl) {
+      const base = enterpriseUrl.replace(/\/$/, "");
+      this._apiUrl = `${base}/api/v3`;
+      this._graphqlUrl = `${base}/api/graphql`;
+    } else {
+      this._apiUrl = DEFAULT_API_URL;
+      this._graphqlUrl = DEFAULT_GRAPHQL_URL;
+    }
   }
 
   async fetchUserInfo(token, username) {
     const message = Soup.Message.new(
       "GET",
-      `${GITHUB_API_URL}/users/${username}`,
+      `${this._apiUrl}/users/${username}`,
     );
 
     message.request_headers.append("Authorization", `Bearer ${token}`);
@@ -62,7 +71,7 @@ export class GitHubApi {
 
     const message = Soup.Message.new(
       "GET",
-      `${GITHUB_API_URL}/user/repos?per_page=100&sort=${apiSort}&direction=${apiDirection}&affiliation=owner,collaborator,organization_member`,
+      `${this._apiUrl}/user/repos?per_page=100&sort=${apiSort}&direction=${apiDirection}&affiliation=owner,collaborator,organization_member`,
     );
 
     message.request_headers.append("Authorization", `Bearer ${token}`);
@@ -87,7 +96,7 @@ export class GitHubApi {
   async fetchFollowers(token) {
     const message = Soup.Message.new(
       "GET",
-      `${GITHUB_API_URL}/user/followers?per_page=100`,
+      `${this._apiUrl}/user/followers?per_page=100`,
     );
 
     message.request_headers.append("Authorization", `Bearer ${token}`);
@@ -112,7 +121,7 @@ export class GitHubApi {
   async fetchRepoIssues(token, owner, repo, perPage = 10) {
     const message = Soup.Message.new(
       "GET",
-      `${GITHUB_API_URL}/repos/${owner}/${repo}/issues?state=open&sort=updated&per_page=${perPage}`,
+      `${this._apiUrl}/repos/${owner}/${repo}/issues?state=open&sort=updated&per_page=${perPage}`,
     );
 
     message.request_headers.append("Authorization", `Bearer ${token}`);
@@ -137,7 +146,7 @@ export class GitHubApi {
   async fetchNotifications(token, perPage = 100) {
     const message = Soup.Message.new(
       "GET",
-      `${GITHUB_API_URL}/notifications?per_page=${perPage}`,
+      `${this._apiUrl}/notifications?per_page=${perPage}`,
     );
 
     message.request_headers.append("Authorization", `Bearer ${token}`);
@@ -162,7 +171,7 @@ export class GitHubApi {
   async markNotificationRead(token, threadId) {
     const message = Soup.Message.new(
       "PATCH",
-      `${GITHUB_API_URL}/notifications/threads/${threadId}`,
+      `${this._apiUrl}/notifications/threads/${threadId}`,
     );
 
     message.request_headers.append("Authorization", `Bearer ${token}`);
@@ -184,7 +193,7 @@ export class GitHubApi {
 
   async fetchRepoWorkflowRuns(token, owner, repo, perPage = 10) {
     // Fetch workflow runs for a specific repository
-    const url = `${GITHUB_API_URL}/repos/${owner}/${repo}/actions/runs?per_page=${perPage}`;
+    const url = `${this._apiUrl}/repos/${owner}/${repo}/actions/runs?per_page=${perPage}`;
     console.log(`[GitHubApi] Fetching workflow runs from: ${url}`);
     
     const message = Soup.Message.new("GET", url);
@@ -226,7 +235,7 @@ export class GitHubApi {
   async rerunWorkflow(token, owner, repo, runId) {
     const message = Soup.Message.new(
       "POST",
-      `${GITHUB_API_URL}/repos/${owner}/${repo}/actions/runs/${runId}/rerun-failed-jobs`,
+      `${this._apiUrl}/repos/${owner}/${repo}/actions/runs/${runId}/rerun-failed-jobs`,
     );
 
     message.request_headers.append("Authorization", `Bearer ${token}`);
@@ -302,7 +311,7 @@ export class GitHubApi {
 
     const query = `{ ${aliases.join("\n")} }`;
 
-    const message = Soup.Message.new("POST", GITHUB_GRAPHQL_URL);
+    const message = Soup.Message.new("POST", this._graphqlUrl);
     message.request_headers.append("Authorization", `Bearer ${token}`);
     message.request_headers.append("Content-Type", "application/json");
     message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");

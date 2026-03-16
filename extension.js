@@ -158,7 +158,7 @@ export default class GitHubTrayExtension extends Extension {
     }
 
     try {
-      const api = new GitHubApi(this._httpSession);
+      const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const promises = [
         api.fetchRepositories(token, username, this._settings),
         api.fetchUserInfo(token, username),
@@ -213,7 +213,7 @@ export default class GitHubTrayExtension extends Extension {
     }
 
     try {
-      const api = new GitHubApi(this._httpSession);
+      const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const [owner, repoName] = repo.full_name.split("/");
       const issues = await api.fetchRepoIssues(token, owner, repoName);
       callback(issues);
@@ -413,6 +413,7 @@ export default class GitHubTrayExtension extends Extension {
           ![
             "github-token",
             "github-username",
+            "github-enterprise-url",
             "max-repos",
             "sort-by",
             "sort-order",

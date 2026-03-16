@@ -3,17 +3,26 @@ import { gettext as _, ngettext } from "resource:///org/gnome/shell/extensions/e
 
 /**
  * Converts a GitHub REST API subject URL to its corresponding web URL.
+ * Supports both github.com and GitHub Enterprise Server.
  * e.g. https://api.github.com/repos/owner/repo/pulls/1 → https://github.com/owner/repo/pull/1
+ * e.g. https://ghe.example.com/api/v3/repos/owner/repo/pulls/1 → https://ghe.example.com/owner/repo/pull/1
  *
  * @param {string|null|undefined} apiUrl
+ * @param {string} enterpriseUrl - base URL of the GHE instance, or empty for github.com
  * @returns {string|null}
  */
-function _subjectApiToWebUrl(apiUrl) {
+function _subjectApiToWebUrl(apiUrl, enterpriseUrl = "") {
   if (!apiUrl) return null;
-  return apiUrl
-    .replace("https://api.github.com/repos/", "https://github.com/")
-    .replace(/\/pulls\/(\d+)$/, "/pull/$1")
-    .replace(/\/commits\/([a-f0-9]+)$/, "/commit/$1");
+
+  let webUrl;
+  if (enterpriseUrl) {
+    const base = enterpriseUrl.replace(/\/$/, "");
+    webUrl = apiUrl.replace(`${base}/api/v3/repos/`, `${base}/`);
+  } else {
+    webUrl = apiUrl.replace("https://api.github.com/repos/", "https://github.com/");
+  }
+
+  return webUrl.replace(/\/commits\/([a-f0-9]+)$/, "/commit/$1");
 }
 
 export class NotificationManager {
@@ -48,7 +57,7 @@ export class NotificationManager {
     if (!token) return;
 
     try {
-      const api = new GitHubApi(this._httpSession);
+      const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       let notifications = await api.fetchNotifications(token);
 
       notifications = this._filter(notifications);
@@ -91,10 +100,11 @@ export class NotificationManager {
             const newUnread = notifications.filter(
               (n) => n.unread && !oldIds.has(n.id),
             );
-            let url = "https://github.com/notifications";
+            const enterpriseUrl = this._settings.get_string("github-enterprise-url");
+            const baseWebUrl = enterpriseUrl ? enterpriseUrl.replace(/\/$/, "") : "https://github.com";
+            let url = `${baseWebUrl}/notifications`;
             if (newUnread.length === 1) {
-              url =
-                _subjectApiToWebUrl(newUnread[0].subject?.url) ?? url;
+              url = _subjectApiToWebUrl(newUnread[0].subject?.url, enterpriseUrl) ?? url;
             }
             this._sendNotification(
               _("GitHub Notifications"),
@@ -122,7 +132,7 @@ export class NotificationManager {
     }
 
     try {
-      const api = new GitHubApi(this._httpSession);
+      const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       await api.markNotificationRead(token, notification.id);
 
       // Remove from local buffer

@@ -82,7 +82,7 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
     const authGroup = new Adw.PreferencesGroup({
       title: _("Authentication"),
       description: _(
-        "Create a token at github.com/settings/tokens\nRequired scopes: repo (private) or public_repo (public only)",
+        "Create a token at github.com/settings/tokens\nRequired scopes: repo (private) or public_repo (public only)\nFor GitHub Enterprise Server, enter the base URL below.",
       ),
     });
 
@@ -107,6 +107,17 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
       settings.set_string("github-token", tokenRow.get_text());
     });
     authGroup.add(tokenRow);
+
+    // GitHub Enterprise Server URL (optional)
+    const enterpriseRow = new Adw.EntryRow({
+      title: _("GitHub Enterprise Server URL"),
+      text: settings.get_string("github-enterprise-url"),
+      show_apply_button: true,
+    });
+    enterpriseRow.connect("apply", () => {
+      settings.set_string("github-enterprise-url", enterpriseRow.get_text().trim());
+    });
+    authGroup.add(enterpriseRow);
 
     page.add(authGroup);
 

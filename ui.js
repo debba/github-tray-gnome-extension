@@ -77,6 +77,12 @@ export class GitHubTrayUI {
     this._notificationsAccordionPager = null;
   }
 
+  // Returns the base web URL for GitHub.com or a GitHub Enterprise instance
+  _ghBaseUrl() {
+    const enterpriseUrl = this._settings?.get_string("github-enterprise-url") || "";
+    return enterpriseUrl ? enterpriseUrl.replace(/\/$/, "") : "https://github.com";
+  }
+
   buildMenu(
     onRefresh,
     onOpenPrefs,
@@ -234,7 +240,7 @@ export class GitHubTrayUI {
       usernameBtn.connect("clicked", () => {
         try {
           Gio.AppInfo.launch_default_for_uri(
-            `https://github.com/${username}`,
+            `${this._ghBaseUrl()}/${username}`,
             null,
           );
         } catch (e) {
@@ -452,7 +458,7 @@ export class GitHubTrayUI {
     openAllBtn.connect("clicked", () => {
       try {
         Gio.AppInfo.launch_default_for_uri(
-          "https://github.com/notifications",
+          `${this._ghBaseUrl()}/notifications`,
           null,
         );
       } catch (e) {
@@ -614,7 +620,7 @@ export class GitHubTrayUI {
     openAllBtn.connect("clicked", () => {
       try {
         Gio.AppInfo.launch_default_for_uri(
-          "https://github.com/notifications",
+          `${this._ghBaseUrl()}/notifications`,
           null,
         );
       } catch (e) {
@@ -1078,7 +1084,7 @@ export class GitHubTrayUI {
       try {
         const username = this._cachedUsername || "";
         Gio.AppInfo.launch_default_for_uri(
-          `https://github.com/${username}?tab=repositories`,
+          `${this._ghBaseUrl()}/${username}?tab=repositories`,
           null,
         );
       } catch (e) {
@@ -1292,9 +1298,16 @@ export class GitHubTrayUI {
   }
 
   _openNotification(notification) {
-    const url =
-      notification.subject.url?.replace("api.github.com/repos", "github.com") ||
-      notification.repository.html_url;
+    const enterpriseUrl = this._settings?.get_string("github-enterprise-url") || "";
+    let url = notification.repository.html_url;
+    if (notification.subject.url) {
+      if (enterpriseUrl) {
+        const base = enterpriseUrl.replace(/\/$/, "");
+        url = notification.subject.url.replace(`${base}/api/v3/repos/`, `${base}/`);
+      } else {
+        url = notification.subject.url.replace("api.github.com/repos", "github.com");
+      }
+    }
     try {
       Gio.AppInfo.launch_default_for_uri(url, null);
     } catch (e) {
