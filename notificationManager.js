@@ -1,4 +1,4 @@
-import { GitHubApi } from "./githubApi.js";
+import { GitHubApi, isCancelled } from "./githubApi.js";
 import { gettext as _, ngettext } from "resource:///org/gnome/shell/extensions/extension.js";
 
 /**
@@ -33,11 +33,12 @@ export class NotificationManager {
    * @param {function(string, string, string|null): void} opts.sendNotification
    * @param {object} opts.ui  - GitHubTrayUI instance
    */
-  constructor({ httpSession, settings, sendNotification, ui }) {
+  constructor({ httpSession, settings, sendNotification, ui, cancellable = null }) {
     this._httpSession = httpSession;
     this._settings = settings;
     this._sendNotification = sendNotification;
     this._ui = ui;
+    this._cancellable = cancellable;
 
     this._lastNotifications = [];
     this._unreadCount = 0;
@@ -58,17 +59,18 @@ export class NotificationManager {
 
     try {
       const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
-      let notifications = await api.fetchNotifications(token);
+      let notifications = await api.fetchNotifications(token, 100, this._cancellable);
 
       notifications = this._filter(notifications);
 
       // Enrich notifications with state info (open/closed/merged) via GraphQL
       try {
-        const stateMap = await api.fetchNotificationStates(token, notifications);
+        const stateMap = await api.fetchNotificationStates(token, notifications, this._cancellable);
         for (const n of notifications) {
           n._stateInfo = stateMap.get(n.id) ?? null;
         }
       } catch (graphqlError) {
+        if (isCancelled(graphqlError)) return;
         console.error(graphqlError, "GitHubTray:fetchNotificationStates");
         // Non-fatal: continue without state enrichment
       }
@@ -119,6 +121,7 @@ export class NotificationManager {
         }
       }
     } catch (error) {
+      if (isCancelled(error)) return;
       console.error(error, "GitHubTray:loadNotifications");
     }
   }
@@ -133,7 +136,7 @@ export class NotificationManager {
 
     try {
       const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
-      await api.markNotificationRead(token, notification.id);
+      await api.markNotificationRead(token, notification.id, this._cancellable);
 
       // Remove from local buffer
       this._lastNotifications = this._lastNotifications.filter(
@@ -151,6 +154,7 @@ export class NotificationManager {
         this._ui.refreshNotifications(this._lastNotifications);
       }
     } catch (error) {
+      if (isCancelled(error)) return;
       console.error(error, "GitHubTray:markNotificationRead");
       callback();
     }
@@ -191,5 +195,6 @@ export class NotificationManager {
     this._httpSession = null;
     this._settings = null;
     this._ui = null;
+    this._cancellable = null;
   }
 }

@@ -1,5 +1,5 @@
 import GLib from "gi://GLib";
-import { GitHubApi } from "./githubApi.js";
+import { GitHubApi, isCancelled } from "./githubApi.js";
 import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 
 export class WorkflowManager {
@@ -11,12 +11,13 @@ export class WorkflowManager {
    * @param {function(): object[]} opts.getMonitoredRepos
    * @param {function(): boolean} opts.isMenuOpen
    */
-  constructor({ httpSession, settings, sendNotification, getMonitoredRepos, isMenuOpen }) {
+  constructor({ httpSession, settings, sendNotification, getMonitoredRepos, isMenuOpen, cancellable = null }) {
     this._httpSession = httpSession;
     this._settings = settings;
     this._sendNotification = sendNotification;
     this._getMonitoredRepos = getMonitoredRepos;
     this._isMenuOpen = isMenuOpen;
+    this._cancellable = cancellable;
 
     // Map<repoFullName, workflowRuns[]>
     this._monitoredWorkflowRuns = new Map();
@@ -48,12 +49,14 @@ export class WorkflowManager {
         owner,
         repoName,
         maxRuns,
+        this._cancellable,
       );
       console.log(
         `[GitHubTray] Fetched ${workflowRuns ? workflowRuns.length : 0} workflow runs for ${repo.full_name}`,
       );
       callback(workflowRuns);
     } catch (error) {
+      if (isCancelled(error)) return;
       console.error(
         `[GitHubTray] Error fetching workflow runs for ${repo.full_name}:`,
         error,
@@ -84,6 +87,7 @@ export class WorkflowManager {
           owner,
           repoName,
           5,
+          this._cancellable,
         );
 
         const oldRuns = this._monitoredWorkflowRuns.get(repo.full_name) || [];
@@ -94,6 +98,7 @@ export class WorkflowManager {
           this._detectChanges(workflowRuns, oldRuns, repo);
         }
       } catch (error) {
+        if (isCancelled(error)) return;
         console.error(
           `[GitHubTray] Error loading workflow runs for ${repo.full_name}:`,
           error,
@@ -113,7 +118,7 @@ export class WorkflowManager {
     try {
       const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const [owner, repo] = workflowRun.repository_full_name.split("/");
-      await api.rerunWorkflow(token, owner, repo, workflowRun.id);
+      await api.rerunWorkflow(token, owner, repo, workflowRun.id, this._cancellable);
 
       // Refresh monitored workflow runs after a short delay
       if (this._rerunTimeout) {
@@ -128,6 +133,7 @@ export class WorkflowManager {
 
       callback(true);
     } catch (error) {
+      if (isCancelled(error)) return;
       console.error(error, "GitHubTray:rerunWorkflow");
       callback(false);
     }
@@ -220,5 +226,6 @@ export class WorkflowManager {
     this._monitoredWorkflowRuns.clear();
     this._httpSession = null;
     this._settings = null;
+    this._cancellable = null;
   }
 }

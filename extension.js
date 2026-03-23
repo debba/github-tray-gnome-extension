@@ -8,7 +8,7 @@ import {
   Extension,
   gettext as _,
 } from "resource:///org/gnome/shell/extensions/extension.js";
-import { GitHubApi } from "./githubApi.js";
+import { GitHubApi, isCancelled } from "./githubApi.js";
 import { GitHubTrayUI } from "./ui.js";
 import { NotificationManager } from "./notificationManager.js";
 import { WorkflowManager } from "./workflowManager.js";
@@ -19,6 +19,7 @@ export default class GitHubTrayExtension extends Extension {
   enable() {
     this._settings = this.getSettings();
     this._httpSession = new Soup.Session();
+    this._cancellable = new Gio.Cancellable();
     this._lastRepos = null;
     this._lastFollowers = null;
     this._isLoading = false;
@@ -114,6 +115,7 @@ export default class GitHubTrayExtension extends Extension {
       settings: this._settings,
       sendNotification: (summary, body, url) => sendNotification(summary, body, url),
       ui: this._ui,
+      cancellable: this._cancellable,
     });
 
     this._workflowManager = new WorkflowManager({
@@ -122,6 +124,7 @@ export default class GitHubTrayExtension extends Extension {
       sendNotification: (summary, body, url) => sendNotification(summary, body, url),
       getMonitoredRepos: () => this._getMonitoredRepos(),
       isMenuOpen,
+      cancellable: this._cancellable,
     });
 
     this._changeDetector = new ChangeDetector({ isMenuOpen });
@@ -160,9 +163,9 @@ export default class GitHubTrayExtension extends Extension {
     try {
       const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const promises = [
-        api.fetchRepositories(token, username, this._settings),
-        api.fetchUserInfo(token, username),
-        api.fetchFollowers(token),
+        api.fetchRepositories(token, username, this._settings, this._cancellable),
+        api.fetchUserInfo(token, username, this._cancellable),
+        api.fetchFollowers(token, this._cancellable),
       ];
 
       // On first load, fetch notifications concurrently so everything appears together
@@ -192,6 +195,7 @@ export default class GitHubTrayExtension extends Extension {
         this._changeDetector.schedule(repos, oldRepos, followers, oldFollowers);
       }
     } catch (error) {
+      if (isCancelled(error)) return;
       console.error(error, "GitHubTray");
       if (this._indicator) {
         this._ui.showMessage(_("Error loading repositories"));
@@ -215,9 +219,10 @@ export default class GitHubTrayExtension extends Extension {
     try {
       const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const [owner, repoName] = repo.full_name.split("/");
-      const issues = await api.fetchRepoIssues(token, owner, repoName);
+      const issues = await api.fetchRepoIssues(token, owner, repoName, 10, this._cancellable);
       callback(issues);
     } catch (error) {
+      if (isCancelled(error)) return;
       console.error(error, "GitHubTray:fetchIssues");
       callback([]);
     }
@@ -538,7 +543,9 @@ export default class GitHubTrayExtension extends Extension {
     this._changeDetector?.destroy();
     this._changeDetector = null;
 
+    this._cancellable.cancel();
     this._httpSession.abort();
+    this._cancellable = null;
     this._httpSession = null;
     this._settings = null;
     this._lastRepos = null;

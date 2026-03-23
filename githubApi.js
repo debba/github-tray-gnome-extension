@@ -1,8 +1,19 @@
 import Soup from "gi://Soup";
 import GLib from "gi://GLib";
+import Gio from "gi://Gio";
 
 const DEFAULT_API_URL = "https://api.github.com";
 const DEFAULT_GRAPHQL_URL = "https://api.github.com/graphql";
+
+/**
+ * Returns true if the error was caused by a cancelled GCancellable.
+ */
+export function isCancelled(error) {
+  if (error instanceof GLib.Error) {
+    return error.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED);
+  }
+  return false;
+}
 
 export class GitHubApi {
   constructor(httpSession, enterpriseUrl = "") {
@@ -18,7 +29,7 @@ export class GitHubApi {
     }
   }
 
-  async fetchUserInfo(token, username) {
+  async fetchUserInfo(token, username, cancellable = null) {
     const message = Soup.Message.new(
       "GET",
       `${this._apiUrl}/users/${username}`,
@@ -31,7 +42,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();
@@ -43,7 +54,7 @@ export class GitHubApi {
     return JSON.parse(data);
   }
 
-  async fetchRepositories(token, username, settings) {
+  async fetchRepositories(token, username, settings, cancellable = null) {
     const sortBy = settings.get_string("sort-by");
     const sortOrder = settings.get_string("sort-order");
 
@@ -81,7 +92,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();
@@ -93,7 +104,7 @@ export class GitHubApi {
     return JSON.parse(data);
   }
 
-  async fetchFollowers(token) {
+  async fetchFollowers(token, cancellable = null) {
     const message = Soup.Message.new(
       "GET",
       `${this._apiUrl}/user/followers?per_page=100`,
@@ -106,7 +117,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();
@@ -118,7 +129,7 @@ export class GitHubApi {
     return JSON.parse(data);
   }
 
-  async fetchRepoIssues(token, owner, repo, perPage = 10) {
+  async fetchRepoIssues(token, owner, repo, perPage = 10, cancellable = null) {
     const message = Soup.Message.new(
       "GET",
       `${this._apiUrl}/repos/${owner}/${repo}/issues?state=open&sort=updated&per_page=${perPage}`,
@@ -131,7 +142,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();
@@ -143,7 +154,7 @@ export class GitHubApi {
     return JSON.parse(data);
   }
 
-  async fetchNotifications(token, perPage = 100) {
+  async fetchNotifications(token, perPage = 100, cancellable = null) {
     const message = Soup.Message.new(
       "GET",
       `${this._apiUrl}/notifications?per_page=${perPage}`,
@@ -156,7 +167,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();
@@ -168,7 +179,7 @@ export class GitHubApi {
     return JSON.parse(data);
   }
 
-  async markNotificationRead(token, threadId) {
+  async markNotificationRead(token, threadId, cancellable = null) {
     const message = Soup.Message.new(
       "PATCH",
       `${this._apiUrl}/notifications/threads/${threadId}`,
@@ -181,7 +192,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();
@@ -191,7 +202,7 @@ export class GitHubApi {
     }
   }
 
-  async fetchRepoWorkflowRuns(token, owner, repo, perPage = 10) {
+  async fetchRepoWorkflowRuns(token, owner, repo, perPage = 10, cancellable = null) {
     // Fetch workflow runs for a specific repository
     const url = `${this._apiUrl}/repos/${owner}/${repo}/actions/runs?per_page=${perPage}`;
     console.log(`[GitHubApi] Fetching workflow runs from: ${url}`);
@@ -205,7 +216,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();
@@ -232,7 +243,7 @@ export class GitHubApi {
     return parsed.workflow_runs || [];
   }
 
-  async rerunWorkflow(token, owner, repo, runId) {
+  async rerunWorkflow(token, owner, repo, runId, cancellable = null) {
     const message = Soup.Message.new(
       "POST",
       `${this._apiUrl}/repos/${owner}/${repo}/actions/runs/${runId}/rerun-failed-jobs`,
@@ -245,7 +256,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();
@@ -265,7 +276,7 @@ export class GitHubApi {
    * @returns {Promise<Map<string, {state: string, isDraft: boolean}>>}
    *   Map keyed by notification.id with enriched state data
    */
-  async fetchNotificationStates(token, notifications) {
+  async fetchNotificationStates(token, notifications, cancellable = null) {
     // Build a list of notifications that have a resolvable subject URL
     const resolvable = notifications.filter((n) => {
       const type = n.subject?.type;
@@ -326,7 +337,7 @@ export class GitHubApi {
     const bytes = await this._httpSession.send_and_read_async(
       message,
       GLib.PRIORITY_DEFAULT,
-      null,
+      cancellable,
     );
 
     const statusCode = message.get_status();

@@ -21,6 +21,7 @@ install: build
 	mkdir -p $(INSTALL_DIR)
 	cp -r $(JS_FILES) metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(INSTALL_DIR)
 	@if [ -d $(LOCALE_DIR) ]; then cp -r $(LOCALE_DIR) $(INSTALL_DIR); fi
+	glib-compile-schemas $(INSTALL_DIR)/$(SCHEMAS_DIR)
 	@echo "Extension installed in $(INSTALL_DIR)"
 	@echo "Restart GNOME Shell to see changes."
 
