@@ -437,9 +437,6 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
       description: _("Manage local paths for your repositories"),
     });
 
-    // Load existing mappings
-    this._updateMappingsList(mappingsGroup, settings);
-
     // Add button to add new mapping
     const addMappingButton = new Gtk.Button({
       label: _("Add New Mapping"),
@@ -452,6 +449,10 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
 
     const addButtonRow = new Adw.ActionRow();
     addButtonRow.set_child(addMappingButton);
+    this._addButtonRow = addButtonRow;
+
+    // Load existing mappings, then add the button row at the end
+    this._updateMappingsList(mappingsGroup, settings);
     mappingsGroup.add(addButtonRow);
 
     page.add(mappingsGroup);
@@ -479,19 +480,17 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
   }
 
   _updateMappingsList(group, settings) {
-    // Remove all existing rows except the last one (add button)
-    let child = group.get_first_child();
-    const rowsToRemove = [];
-    while (child) {
-      if (
-        child instanceof Adw.ActionRow &&
-        child.get_title() !== "Add New Mapping"
-      ) {
-        rowsToRemove.push(child);
-      }
-      child = child.get_next_sibling();
+    // Remove previously-added mapping rows by reference
+    if (this._mappingRows) {
+      this._mappingRows.forEach((row) => group.remove(row));
     }
-    rowsToRemove.forEach((row) => group.remove(row));
+    this._mappingRows = [];
+
+    // Detach the add button so new rows can be inserted before it
+    const hasAddButton = this._addButtonRow && this._addButtonRow.get_parent() !== null;
+    if (hasAddButton) {
+      group.remove(this._addButtonRow);
+    }
 
     try {
       const localProjectsJson = settings.get_string("local-projects");
@@ -504,30 +503,36 @@ export default class GitHubTrayPreferences extends ExtensionPreferences {
           subtitle: _('Click "Add New Mapping" to set up local paths'),
         });
         group.add(emptyRow);
-        return;
-      }
+        this._mappingRows.push(emptyRow);
+      } else {
+        for (const [repoName, path] of entries) {
+          const row = new Adw.ActionRow({
+            title: repoName,
+            subtitle: path,
+          });
 
-      for (const [repoName, path] of entries) {
-        const row = new Adw.ActionRow({
-          title: repoName,
-          subtitle: path,
-        });
+          // Remove button
+          const removeButton = new Gtk.Button({
+            icon_name: "user-trash-symbolic",
+            valign: Gtk.Align.CENTER,
+            css_classes: ["destructive-action"],
+          });
+          removeButton.connect("clicked", () => {
+            this._removeMapping(settings, repoName, group);
+          });
+          row.add_suffix(removeButton);
 
-        // Remove button
-        const removeButton = new Gtk.Button({
-          icon_name: "user-trash-symbolic",
-          valign: Gtk.Align.CENTER,
-          css_classes: ["destructive-action"],
-        });
-        removeButton.connect("clicked", () => {
-          this._removeMapping(settings, repoName, group);
-        });
-        row.add_suffix(removeButton);
-
-        group.add(row);
+          group.add(row);
+          this._mappingRows.push(row);
+        }
       }
     } catch (e) {
       console.log(`Error loading mappings: ${e}`);
+    }
+
+    // Re-attach the add button so it stays at the bottom
+    if (hasAddButton && this._addButtonRow) {
+      group.add(this._addButtonRow);
     }
   }
 

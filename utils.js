@@ -68,6 +68,39 @@ export function detectChanges(newRepos, oldRepos) {
   };
 }
 
+/**
+ * Converts a GitHub REST API subject URL to its corresponding web URL.
+ * Supports both github.com and GitHub Enterprise Server.
+ * e.g. https://api.github.com/repos/owner/repo/pulls/1 → https://github.com/owner/repo/pull/1
+ * e.g. https://ghe.example.com/api/v3/repos/owner/repo/pulls/1 → https://ghe.example.com/owner/repo/pull/1
+ *
+ * @param {string|null|undefined} apiUrl
+ * @param {string} enterpriseUrl - base URL of the GHE instance, or empty for github.com
+ * @param {string|null|undefined} subjectType - notification subject type
+ * @returns {string|null}
+ */
+export function subjectApiToWebUrl(apiUrl, enterpriseUrl = "", subjectType = null) {
+  if (!apiUrl) return null;
+
+  let webUrl;
+  if (enterpriseUrl) {
+    const base = enterpriseUrl.replace(/\/$/, "");
+    webUrl = apiUrl.replace(`${base}/api/v3/repos/`, `${base}/`);
+  } else {
+    webUrl = apiUrl.replace("https://api.github.com/repos/", "https://github.com/");
+  }
+
+  const isPullRequest =
+    subjectType === "PullRequest" ||
+    subjectType === "PullRequestReview" ||
+    subjectType === "PullRequestReviewComment";
+  if (isPullRequest) {
+    webUrl = webUrl.replace(/\/(issues|pulls)\/(\d+).*$/, "/pull/$2");
+  }
+
+  return webUrl.replace(/\/commits\/([a-f0-9]+)$/, "/commit/$1");
+}
+
 export function detectNewFollowers(newFollowers, oldFollowers) {
   if (!oldFollowers) return null;
 

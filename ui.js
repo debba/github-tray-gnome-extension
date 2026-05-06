@@ -3,7 +3,7 @@ import Gio from "gi://Gio";
 import GLib from "gi://GLib";
 import Clutter from "gi://Clutter";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
-import { formatNumber, relativeTime } from "./utils.js";
+import { formatNumber, relativeTime, subjectApiToWebUrl } from "./utils.js";
 import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 
 // Number of notifications shown per page in the menu
@@ -1299,15 +1299,12 @@ export class GitHubTrayUI {
 
   _openNotification(notification) {
     const enterpriseUrl = this._settings?.get_string("github-enterprise-url") || "";
-    let url = notification.repository.html_url;
-    if (notification.subject.url) {
-      if (enterpriseUrl) {
-        const base = enterpriseUrl.replace(/\/$/, "");
-        url = notification.subject.url.replace(`${base}/api/v3/repos/`, `${base}/`);
-      } else {
-        url = notification.subject.url.replace("api.github.com/repos", "github.com");
-      }
-    }
+    const url =
+      subjectApiToWebUrl(
+        notification.subject?.url,
+        enterpriseUrl,
+        notification.subject?.type,
+      ) ?? notification.repository.html_url;
     try {
       Gio.AppInfo.launch_default_for_uri(url, null);
     } catch (e) {
