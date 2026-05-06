@@ -156,12 +156,10 @@ export default class GitHubTrayExtension extends Extension {
     const wasOpen = this._indicator.menu.isOpen;
     const isFirstLoad = !this._lastRepos;
 
-    if (!this._indicator.menu.isOpen) {
-      this._ui.showMessage(_("Loading repositories..."));
-    } else if (manualRefresh) {
-      // Menu is open and the user clicked refresh — give immediate feedback
-      // by replacing the contents with a loading indicator until the fetch
-      // completes.
+    if (!this._indicator.menu.isOpen || manualRefresh) {
+      // Show the spinner whether the menu is currently closed (so it appears
+      // ready when the user clicks the panel icon) or open after a manual
+      // refresh (immediate feedback while the fetch is in flight).
       this._ui.showLoading(_("Loading repositories..."));
     }
 
@@ -463,7 +461,7 @@ export default class GitHubTrayExtension extends Extension {
     if (networkMonitor.get_connectivity() === Gio.NetworkConnectivity.FULL) {
       this._loadRepositories();
     } else {
-      this._ui.showMessage(_("Waiting for network connection..."));
+      this._ui.showLoading(_("Waiting for network connection..."));
 
       this._networkChangedId = networkMonitor.connect(
         "network-changed",
