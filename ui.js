@@ -66,7 +66,7 @@ export class GitHubTrayUI {
     this._cachedUsername = null;
     this._cachedUserInfo = null;
     this._cachedNotifications = [];
-    this._onFetchIssues = null;
+    this._onFetchRepoData = null;
     this._onMarkNotificationRead = null;
     this._onRerunWorkflow = null;
     this._onFetchWorkflowRuns = null;
@@ -83,17 +83,39 @@ export class GitHubTrayUI {
     return enterpriseUrl ? enterpriseUrl.replace(/\/$/, "") : "https://github.com";
   }
 
+  // Loads issues+PRs for a repo in a single GraphQL call, caches them on the
+  // repo object so the second badge click (issues ↔ PRs) doesn't re-fetch.
+  _loadRepoData(repo, mode) {
+    const render = (data) => {
+      if (mode === "pulls") this.showPullRequestsView(repo, data.pulls);
+      else this.showIssuesView(repo, data.issues);
+    };
+
+    if (repo._cachedRepoData) {
+      render(repo._cachedRepoData);
+      return;
+    }
+    if (!this._onFetchRepoData) {
+      render({ issues: [], pulls: [] });
+      return;
+    }
+    this._onFetchRepoData(repo, (data) => {
+      repo._cachedRepoData = data;
+      render(data);
+    });
+  }
+
   buildMenu(
     onRefresh,
     onOpenPrefs,
     onDebug,
-    onFetchIssues = null,
+    onFetchRepoData = null,
     onMarkNotificationRead = null,
     onRerunWorkflow = null,
     onFetchWorkflowRuns = null,
     onRefreshNotifications = null,
   ) {
-    this._onFetchIssues = onFetchIssues;
+    this._onFetchRepoData = onFetchRepoData;
     this._onMarkNotificationRead = onMarkNotificationRead;
     this._onRerunWorkflow = onRerunWorkflow;
     this._onFetchWorkflowRuns = onFetchWorkflowRuns;
@@ -1494,6 +1516,15 @@ export class GitHubTrayUI {
     });
     statsRow.add_child(forksBtn);
 
+    // Issues count: prefer GraphQL-derived count (issues only), fall back to
+    // open_issues_count (which mixes issues + PRs) when not yet enriched.
+    const issuesCount =
+      typeof repo._issuesCount === "number"
+        ? repo._issuesCount
+        : repo.open_issues_count;
+    const pullsCount =
+      typeof repo._pullsCount === "number" ? repo._pullsCount : 0;
+
     // Issues
     const issuesBox = new St.BoxLayout({
       vertical: false,
@@ -1504,7 +1535,7 @@ export class GitHubTrayUI {
       "github-tray-stat-icon octicon-stat-issue"
     );
     const issuesLabel = new St.Label({
-      text: formatNumber(repo.open_issues_count),
+      text: formatNumber(issuesCount),
       style_class: "github-tray-stat-value github-tray-issues-value",
     });
     issuesBox.add_child(issuesIcon);
@@ -1516,10 +1547,8 @@ export class GitHubTrayUI {
     });
     issuesBtn.set_child(issuesBox);
     issuesBtn.connect("clicked", () => {
-      if (this._onFetchIssues && repo.open_issues_count > 0) {
-        this._onFetchIssues(repo, (issues) => {
-          this.showIssuesView(repo, issues);
-        });
+      if (this._onFetchRepoData && issuesCount > 0) {
+        this._loadRepoData(repo, "issues");
       } else {
         try {
           Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/issues`, null);
@@ -1530,6 +1559,41 @@ export class GitHubTrayUI {
       }
     });
     statsRow.add_child(issuesBtn);
+
+    // Pull Requests
+    const pullsBox = new St.BoxLayout({
+      vertical: false,
+      style_class: "github-tray-stat",
+    });
+    const pullsIcon = this._makeOcticonIcon(
+      "pull-request-symbolic",
+      "github-tray-stat-icon octicon-stat-pr"
+    );
+    const pullsLabel = new St.Label({
+      text: formatNumber(pullsCount),
+      style_class: "github-tray-stat-value github-tray-pulls-value",
+    });
+    pullsBox.add_child(pullsIcon);
+    pullsBox.add_child(pullsLabel);
+
+    const pullsBtn = new St.Button({
+      style_class: "button github-tray-pulls-btn",
+      can_focus: true,
+    });
+    pullsBtn.set_child(pullsBox);
+    pullsBtn.connect("clicked", () => {
+      if (this._onFetchRepoData && pullsCount > 0) {
+        this._loadRepoData(repo, "pulls");
+      } else {
+        try {
+          Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/pulls`, null);
+        } catch (e) {
+          console.error(e, "GitHubTray:open-pulls");
+        }
+        this._indicator.menu.close();
+      }
+    });
+    statsRow.add_child(pullsBtn);
 
     // Last updated
     const updatedStr = relativeTime(repo.updated_at);
@@ -1563,7 +1627,7 @@ export class GitHubTrayUI {
     });
 
     // Issues button (only if there are open issues)
-    if (repo.open_issues_count > 0) {
+    if (issuesCount > 0) {
       const issuesBtnCompact = new St.Button({
         style_class: "button github-tray-issues-btn-compact",
         can_focus: true,
@@ -1575,10 +1639,8 @@ export class GitHubTrayUI {
       );
       issuesBtnCompact.set_child(issuesIcon);
       issuesBtnCompact.connect("clicked", () => {
-        if (this._onFetchIssues) {
-          this._onFetchIssues(repo, (issues) => {
-            this.showIssuesView(repo, issues);
-          });
+        if (this._onFetchRepoData) {
+          this._loadRepoData(repo, "issues");
         } else {
           try {
             Gio.AppInfo.launch_default_for_uri(
@@ -1592,6 +1654,36 @@ export class GitHubTrayUI {
         }
       });
       sideButtonsBox.add_child(issuesBtnCompact);
+    }
+
+    // Pull Requests button (only if there are open PRs)
+    if (pullsCount > 0) {
+      const pullsBtnCompact = new St.Button({
+        style_class: "button github-tray-pulls-btn-compact",
+        can_focus: true,
+      });
+      const pullsIconCompact = this._makeOcticonIcon(
+        "pull-request-symbolic",
+        "github-tray-pulls-icon-compact",
+        "🔀",
+      );
+      pullsBtnCompact.set_child(pullsIconCompact);
+      pullsBtnCompact.connect("clicked", () => {
+        if (this._onFetchRepoData) {
+          this._loadRepoData(repo, "pulls");
+        } else {
+          try {
+            Gio.AppInfo.launch_default_for_uri(
+              `${repo.html_url}/pulls`,
+              null,
+            );
+          } catch (e) {
+            console.error(e, "GitHubTray:open-pulls-compact");
+          }
+          this._indicator.menu.close();
+        }
+      });
+      sideButtonsBox.add_child(pullsBtnCompact);
     }
 
     // Workflow runs button
@@ -1777,6 +1869,89 @@ export class GitHubTrayUI {
 
     for (const issue of issues) {
       const item = this._createIssueItem(issue, repo);
+      this._reposContainer.addMenuItem(item);
+    }
+  }
+
+  showPullRequestsView(repo, pulls) {
+    if (!this._indicator) return;
+
+    this._currentView = "pulls";
+    this._currentRepo = repo;
+
+    this._headerSection.removeAll();
+    this._reposContainer.removeAll();
+
+    const headerItem = new PopupMenu.PopupBaseMenuItem({
+      reactive: false,
+      can_focus: false,
+    });
+    const headerBox = new St.BoxLayout({
+      vertical: true,
+      x_expand: true,
+      style_class: "github-tray-header",
+    });
+
+    const topRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    const backBtn = new St.Button({
+      label: _("← Back"),
+      style_class: "button github-tray-back-btn",
+      can_focus: true,
+    });
+    backBtn.connect("clicked", () => {
+      this.showReposView();
+    });
+    topRow.add_child(backBtn);
+
+    const spacer = new St.Widget({ x_expand: true });
+    topRow.add_child(spacer);
+
+    const openInBrowserBtn = new St.Button({
+      label: _("Open in Browser"),
+      style_class: "button github-tray-link-btn-blue",
+      can_focus: true,
+    });
+    openInBrowserBtn.connect("clicked", () => {
+      try {
+        Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/pulls`, null);
+      } catch (e) {
+        console.error(e, "GitHubTray:open-pulls-browser");
+      }
+      this._indicator.menu.close();
+    });
+    topRow.add_child(openInBrowserBtn);
+
+    headerBox.add_child(topRow);
+
+    const titleRow = new St.BoxLayout({
+      vertical: false,
+      x_expand: true,
+      style_class: "github-tray-issues-title-row",
+    });
+    const titleLabel = new St.Label({
+      text: `${repo.name} - ${_("Pull Requests")}`,
+      style_class: "github-tray-issues-title",
+      x_expand: true,
+    });
+    titleRow.add_child(titleLabel);
+    headerBox.add_child(titleRow);
+
+    headerItem.add_child(headerBox);
+    this._headerSection.addMenuItem(headerItem);
+    this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+    if (!pulls || pulls.length === 0) {
+      this.showMessage(_("No open pull requests"));
+      return;
+    }
+
+    for (const pr of pulls) {
+      const item = this._createIssueItem(pr, repo);
       this._reposContainer.addMenuItem(item);
     }
   }

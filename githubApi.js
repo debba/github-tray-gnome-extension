@@ -29,15 +29,21 @@ export class GitHubApi {
     }
   }
 
-  async fetchUserInfo(token, username, cancellable = null) {
-    const message = Soup.Message.new(
-      "GET",
-      `${this._apiUrl}/users/${username}`,
-    );
-
+  /**
+   * Sends a GraphQL query and returns the parsed `data` payload.
+   * Throws on non-OK HTTP status; logs (but doesn't throw) on partial GraphQL errors.
+   */
+  async _graphql(token, query, cancellable = null) {
+    const message = Soup.Message.new("POST", this._graphqlUrl);
     message.request_headers.append("Authorization", `Bearer ${token}`);
-    message.request_headers.append("Accept", "application/vnd.github.v3+json");
+    message.request_headers.append("Content-Type", "application/json");
     message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+
+    const bodyBytes = new TextEncoder().encode(JSON.stringify({ query }));
+    message.set_request_body_from_bytes(
+      "application/json",
+      GLib.Bytes.new(bodyBytes),
+    );
 
     const bytes = await this._httpSession.send_and_read_async(
       message,
@@ -47,111 +53,153 @@ export class GitHubApi {
 
     const statusCode = message.get_status();
     if (statusCode !== Soup.Status.OK) {
-      throw new Error(`HTTP ${statusCode}`);
+      throw new Error(`GraphQL HTTP ${statusCode}`);
     }
 
-    const data = new TextDecoder().decode(bytes.get_data());
-    return JSON.parse(data);
+    const parsed = JSON.parse(new TextDecoder().decode(bytes.get_data()));
+    if (parsed.errors) {
+      console.error("[GitHubApi] GraphQL errors:", JSON.stringify(parsed.errors));
+    }
+    return parsed.data ?? {};
   }
 
-  async fetchRepositories(token, username, settings, cancellable = null) {
-    const sortBy = settings.get_string("sort-by");
-    const sortOrder = settings.get_string("sort-order");
+  /**
+   * Single GraphQL round-trip returning everything the menu needs:
+   * viewer info, repositories (with open issues/PR counts), and followers.
+   * Response is shaped to match the legacy REST objects so existing UI code keeps working.
+   */
+  async fetchMenuData(token, cancellable = null) {
+    const query = `{
+      viewer {
+        login
+        avatarUrl
+        followers(first: 1) { totalCount }
+        repositories(
+          first: 100
+          ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]
+          orderBy: { field: UPDATED_AT, direction: DESC }
+        ) {
+          totalCount
+          nodes {
+            databaseId
+            name
+            nameWithOwner
+            description
+            url
+            isPrivate
+            isFork
+            owner { login }
+            parent { url }
+            primaryLanguage { name }
+            stargazerCount
+            forkCount
+            updatedAt
+            pushedAt
+            createdAt
+            issues(states: OPEN) { totalCount }
+            pullRequests(states: OPEN) { totalCount }
+          }
+        }
+        followersList: followers(first: 100) {
+          nodes { databaseId login url }
+        }
+      }
+    }`;
 
-    let apiSort = "updated";
-    let apiDirection = sortOrder === "asc" ? "asc" : "desc";
+    const data = await this._graphql(token, query, cancellable);
+    const viewer = data?.viewer ?? {};
 
-    switch (sortBy) {
-      case "stars":
-        apiSort = "updated";
-        break;
-      case "name":
-        apiSort = "full_name";
-        break;
-      case "created":
-        apiSort = "created";
-        break;
-      case "pushed":
-        apiSort = "pushed";
-        break;
-      case "updated":
-      default:
-        apiSort = "updated";
-        break;
-    }
+    const repos = (viewer.repositories?.nodes ?? []).map((node) => ({
+      id: node.databaseId,
+      name: node.name,
+      full_name: node.nameWithOwner,
+      description: node.description,
+      html_url: node.url,
+      private: node.isPrivate,
+      fork: node.isFork,
+      owner: node.owner ? { login: node.owner.login } : null,
+      parent: node.parent ? { html_url: node.parent.url } : null,
+      language: node.primaryLanguage?.name ?? null,
+      stargazers_count: node.stargazerCount,
+      forks_count: node.forkCount,
+      open_issues_count: (node.issues?.totalCount ?? 0) + (node.pullRequests?.totalCount ?? 0),
+      updated_at: node.updatedAt,
+      pushed_at: node.pushedAt,
+      created_at: node.createdAt,
+      _issuesCount: node.issues?.totalCount ?? 0,
+      _pullsCount: node.pullRequests?.totalCount ?? 0,
+    }));
 
-    const message = Soup.Message.new(
-      "GET",
-      `${this._apiUrl}/user/repos?per_page=100&sort=${apiSort}&direction=${apiDirection}&affiliation=owner,collaborator,organization_member`,
-    );
+    const followers = (viewer.followersList?.nodes ?? []).map((node) => ({
+      id: node.databaseId,
+      login: node.login,
+      html_url: node.url,
+    }));
 
-    message.request_headers.append("Authorization", `Bearer ${token}`);
-    message.request_headers.append("Accept", "application/vnd.github.v3+json");
-    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+    const userInfo = {
+      login: viewer.login,
+      avatar_url: viewer.avatarUrl,
+      followers: viewer.followers?.totalCount ?? 0,
+      public_repos: viewer.repositories?.totalCount ?? repos.length,
+    };
 
-    const bytes = await this._httpSession.send_and_read_async(
-      message,
-      GLib.PRIORITY_DEFAULT,
-      cancellable,
-    );
-
-    const statusCode = message.get_status();
-    if (statusCode !== Soup.Status.OK) {
-      throw new Error(`HTTP ${statusCode}`);
-    }
-
-    const data = new TextDecoder().decode(bytes.get_data());
-    return JSON.parse(data);
+    return { repos, userInfo, followers };
   }
 
-  async fetchFollowers(token, cancellable = null) {
-    const message = Soup.Message.new(
-      "GET",
-      `${this._apiUrl}/user/followers?per_page=100`,
-    );
+  /**
+   * Single GraphQL call returning open issues AND pull requests for a repo,
+   * shaped to match the legacy REST objects consumed by `_createIssueItem`.
+   */
+  async fetchRepoIssuesAndPulls(token, owner, repoName, perPage = 20, cancellable = null) {
+    const query = `{
+      repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repoName)}) {
+        issues(first: ${perPage}, states: OPEN, orderBy: { field: UPDATED_AT, direction: DESC }) {
+          nodes {
+            databaseId
+            number
+            title
+            url
+            state
+            updatedAt
+            author { login }
+            labels(first: 10) { nodes { name color } }
+          }
+        }
+        pullRequests(first: ${perPage}, states: OPEN, orderBy: { field: UPDATED_AT, direction: DESC }) {
+          nodes {
+            databaseId
+            number
+            title
+            url
+            state
+            updatedAt
+            isDraft
+            author { login }
+            labels(first: 10) { nodes { name color } }
+          }
+        }
+      }
+    }`;
 
-    message.request_headers.append("Authorization", `Bearer ${token}`);
-    message.request_headers.append("Accept", "application/vnd.github.v3+json");
-    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
+    const data = await this._graphql(token, query, cancellable);
+    const repo = data?.repository ?? {};
 
-    const bytes = await this._httpSession.send_and_read_async(
-      message,
-      GLib.PRIORITY_DEFAULT,
-      cancellable,
-    );
+    const shape = (node) => ({
+      id: node.databaseId,
+      number: node.number,
+      title: node.title,
+      html_url: node.url,
+      state: (node.state || "OPEN").toLowerCase(),
+      updated_at: node.updatedAt,
+      user: node.author ? { login: node.author.login } : null,
+      labels: (node.labels?.nodes ?? []).map((l) => ({ name: l.name, color: l.color })),
+      draft: node.isDraft ?? false,
+    });
 
-    const statusCode = message.get_status();
-    if (statusCode !== Soup.Status.OK) {
-      throw new Error(`HTTP ${statusCode}`);
-    }
-
-    const data = new TextDecoder().decode(bytes.get_data());
-    return JSON.parse(data);
-  }
-
-  async fetchRepoIssues(token, owner, repo, perPage = 10, cancellable = null) {
-    const message = Soup.Message.new(
-      "GET",
-      `${this._apiUrl}/repos/${owner}/${repo}/issues?state=open&sort=updated&per_page=${perPage}`,
-    );
-
-    message.request_headers.append("Authorization", `Bearer ${token}`);
-    message.request_headers.append("Accept", "application/vnd.github.v3+json");
-    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
-
-    const bytes = await this._httpSession.send_and_read_async(
-      message,
-      GLib.PRIORITY_DEFAULT,
-      cancellable,
-    );
-
-    const statusCode = message.get_status();
-    if (statusCode !== Soup.Status.OK) {
-      throw new Error(`HTTP ${statusCode}`);
-    }
-
-    const data = new TextDecoder().decode(bytes.get_data());
-    return JSON.parse(data);
+    return {
+      issues: (repo.issues?.nodes ?? []).map(shape),
+      pulls: (repo.pullRequests?.nodes ?? []).map(shape),
+    };
   }
 
   async fetchNotifications(token, perPage = 100, cancellable = null) {
@@ -320,40 +368,15 @@ export class GitHubApi {
 
     if (aliases.length === 0) return new Map();
 
-    const query = `{ ${aliases.join("\n")} }`;
-
-    const message = Soup.Message.new("POST", this._graphqlUrl);
-    message.request_headers.append("Authorization", `Bearer ${token}`);
-    message.request_headers.append("Content-Type", "application/json");
-    message.request_headers.append("User-Agent", "GNOME-Shell-GitHub-Tray");
-
-    const body = JSON.stringify({ query });
-    const bodyBytes = new TextEncoder().encode(body);
-    message.set_request_body_from_bytes(
-      "application/json",
-      GLib.Bytes.new(bodyBytes),
-    );
-
-    const bytes = await this._httpSession.send_and_read_async(
-      message,
-      GLib.PRIORITY_DEFAULT,
+    const data = await this._graphql(
+      token,
+      `{ ${aliases.join("\n")} }`,
       cancellable,
     );
 
-    const statusCode = message.get_status();
-    if (statusCode !== Soup.Status.OK) {
-      throw new Error(`GraphQL HTTP ${statusCode}`);
-    }
-
-    const data = JSON.parse(new TextDecoder().decode(bytes.get_data()));
-    if (data.errors) {
-      console.error("[GitHubApi] GraphQL errors:", JSON.stringify(data.errors));
-    }
-
-    // Build result map: notificationId -> { state, isDraft }
     const result = new Map();
     for (const [alias, notifId] of aliasToId) {
-      const repoData = data?.data?.[alias];
+      const repoData = data?.[alias];
       if (!repoData) continue;
 
       const item = repoData.pullRequest ?? repoData.issue;

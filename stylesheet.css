@@ -552,7 +552,8 @@
 
 .github-tray-stars-btn,
 .github-tray-forks-btn,
-.github-tray-issues-btn {
+.github-tray-issues-btn,
+.github-tray-pulls-btn {
     padding: 0;
     background-color: transparent;
     border-radius: 6px;
@@ -570,13 +571,19 @@
 }
 
 .github-tray-issues-btn:hover {
-    background-color: rgba(248, 81, 73, 0.1);
-    border: 1px solid rgba(248, 81, 73, 0.25);
+    background-color: rgba(63, 185, 80, 0.1);
+    border: 1px solid rgba(63, 185, 80, 0.25);
+}
+
+.github-tray-pulls-btn:hover {
+    background-color: rgba(88, 166, 255, 0.1);
+    border: 1px solid rgba(88, 166, 255, 0.25);
 }
 
 /* ── Side action buttons (workflow, folder) - Compact version ─── */
 
 .github-tray-issues-btn-compact,
+.github-tray-pulls-btn-compact,
 .github-tray-workflow-btn-compact,
 .github-tray-folder-btn-compact {
     padding: 3px;
@@ -621,6 +628,17 @@
 
 .github-tray-issues-icon-compact {
     color: #f85149;
+    icon-size: 12px;
+}
+
+.github-tray-pulls-btn-compact:hover {
+    background-color: rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.4);
+    box-shadow: 0 0 6px rgba(88, 166, 255, 0.2);
+}
+
+.github-tray-pulls-icon-compact {
+    color: #58a6ff;
     icon-size: 12px;
 }
 
@@ -903,6 +921,11 @@
 /* Issue open — green */
 .octicon-stat-issue {
     color: #3fb950;
+}
+
+/* Pull request — blue (visually distinct from green issues) */
+.octicon-stat-pr {
+    color: #58a6ff;
 }
 
 /* ── Octicon notification type icons (GitHub official colors) ─── */

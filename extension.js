@@ -82,7 +82,7 @@ export default class GitHubTrayExtension extends Extension {
         this._indicator.menu.close();
       },
       () => this._onDebugClick(),
-      (repo, callback) => this._fetchRepoIssues(repo, callback),
+      (repo, callback) => this._fetchRepoIssuesAndPulls(repo, callback),
       (notification, callback) =>
         this._notificationManager.markRead(notification, callback),
       (workflowRun, callback) =>
@@ -162,18 +162,19 @@ export default class GitHubTrayExtension extends Extension {
 
     try {
       const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
-      const promises = [
-        api.fetchRepositories(token, username, this._settings, this._cancellable),
-        api.fetchUserInfo(token, username, this._cancellable),
-        api.fetchFollowers(token, this._cancellable),
-      ];
 
-      // On first load, fetch notifications concurrently so everything appears together
-      if (isFirstLoad && this._settings.get_boolean("show-notifications")) {
-        promises.push(this._notificationManager.load());
-      }
+      // Single GraphQL round-trip: viewer info + repos + per-repo issue/PR counts + followers.
+      const menuPromise = api.fetchMenuData(token, this._cancellable);
+      // On first load, fetch notifications concurrently so everything appears together.
+      const notifPromise =
+        isFirstLoad && this._settings.get_boolean("show-notifications")
+          ? this._notificationManager.load()
+          : Promise.resolve();
 
-      const [repos, userInfo, followers] = await Promise.all(promises);
+      const [{ repos, userInfo, followers }] = await Promise.all([
+        menuPromise,
+        notifPromise,
+      ]);
 
       if (!this._indicator) return;
 
@@ -209,22 +210,28 @@ export default class GitHubTrayExtension extends Extension {
     }
   }
 
-  async _fetchRepoIssues(repo, callback) {
+  async _fetchRepoIssuesAndPulls(repo, callback) {
     const token = this._settings?.get_string("github-token");
     if (!token) {
-      callback([]);
+      callback({ issues: [], pulls: [] });
       return;
     }
 
     try {
       const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const [owner, repoName] = repo.full_name.split("/");
-      const issues = await api.fetchRepoIssues(token, owner, repoName, 10, this._cancellable);
-      callback(issues);
+      const data = await api.fetchRepoIssuesAndPulls(
+        token,
+        owner,
+        repoName,
+        20,
+        this._cancellable,
+      );
+      callback(data);
     } catch (error) {
       if (isCancelled(error)) return;
-      console.error(error, "GitHubTray:fetchIssues");
-      callback([]);
+      console.error(error, "GitHubTray:fetchRepoIssuesAndPulls");
+      callback({ issues: [], pulls: [] });
     }
   }
 
