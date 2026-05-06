@@ -928,6 +928,27 @@
     color: #58a6ff;
 }
 
+/* ── Loading indicator (shown during manual refresh) ──────────── */
+
+.github-tray-loading-item {
+    padding: 24px 12px;
+}
+
+.github-tray-loading-box {
+    spacing: 8px;
+}
+
+.github-tray-loading-spinner {
+    color: #58a6ff;
+    icon-size: 16px;
+}
+
+.github-tray-loading-label {
+    color: #c9d1d9;
+    font-size: 11px;
+    font-weight: 500;
+}
+
 /* ── Octicon notification type icons (GitHub official colors) ─── */
 
 /* Base size — all notification type icons */

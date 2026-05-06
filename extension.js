@@ -158,6 +158,11 @@ export default class GitHubTrayExtension extends Extension {
 
     if (!this._indicator.menu.isOpen) {
       this._ui.showMessage(_("Loading repositories..."));
+    } else if (manualRefresh) {
+      // Menu is open and the user clicked refresh — give immediate feedback
+      // by replacing the contents with a loading indicator until the fetch
+      // completes.
+      this._ui.showLoading(_("Loading repositories..."));
     }
 
     try {
@@ -262,24 +267,10 @@ export default class GitHubTrayExtension extends Extension {
 
   _handleRepoUpdate(repos, username, userInfo, wasOpen, manualRefresh) {
     const notifications = this._notificationManager.lastNotifications;
-    if (manualRefresh && wasOpen) {
-      this._pendingUpdate = { repos, username, userInfo, notifications };
-      this._indicator.menu.close();
-      if (this._menuReopenTimeout) {
-        GLib.source_remove(this._menuReopenTimeout);
-        this._menuReopenTimeout = null;
-      }
-      this._menuReopenTimeout = GLib.timeout_add(
-        GLib.PRIORITY_DEFAULT,
-        400,
-        () => {
-          this._menuReopenTimeout = null;
-          if (this._indicator) {
-            this._indicator.menu.open();
-          }
-          return GLib.SOURCE_REMOVE;
-        },
-      );
+    if (manualRefresh && this._indicator.menu.isOpen) {
+      // Replace the loading indicator with the fresh data in-place — no
+      // close/reopen flicker.
+      this._ui.updateMenu(repos, username, userInfo, notifications);
     } else if (!this._indicator.menu.isOpen) {
       this._ui.updateMenu(repos, username, userInfo, notifications);
     } else {
@@ -503,10 +494,6 @@ export default class GitHubTrayExtension extends Extension {
     if (this._settingsDebounceId) {
       GLib.source_remove(this._settingsDebounceId);
       this._settingsDebounceId = null;
-    }
-    if (this._menuReopenTimeout) {
-      GLib.source_remove(this._menuReopenTimeout);
-      this._menuReopenTimeout = null;
     }
     if (this._menuCloseTimeout) {
       GLib.source_remove(this._menuCloseTimeout);

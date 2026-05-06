@@ -1790,6 +1790,47 @@ export class GitHubTrayUI {
     }
   }
 
+  // Clears the open menu and shows an in-place loading indicator.
+  // Called on manual refresh so the user gets immediate feedback while the
+  // GraphQL request is in flight.
+  showLoading(text = _("Loading...")) {
+    if (!this._indicator) return;
+    try {
+      this._currentView = "loading";
+      this._headerSection?.removeAll();
+      this._notificationsSection?.removeAll();
+      this._reposContainer?.removeAll();
+
+      const loadingItem = new PopupMenu.PopupBaseMenuItem({
+        reactive: false,
+        can_focus: false,
+        style_class: "github-tray-loading-item",
+      });
+      const box = new St.BoxLayout({
+        vertical: false,
+        x_expand: true,
+        x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
+        style_class: "github-tray-loading-box",
+      });
+      const spinner = new St.Icon({
+        icon_name: "content-loading-symbolic",
+        icon_size: 16,
+        style_class: "github-tray-loading-spinner",
+      });
+      const label = new St.Label({
+        text,
+        style_class: "github-tray-loading-label",
+      });
+      box.add_child(spinner);
+      box.add_child(label);
+      loadingItem.add_child(box);
+      this._reposContainer.addMenuItem(loadingItem);
+    } catch (e) {
+      console.error(e, "GitHubTray:showLoading");
+    }
+  }
+
   showIssuesView(repo, issues) {
     if (!this._indicator) return;
 
