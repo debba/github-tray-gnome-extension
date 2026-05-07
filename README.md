@@ -1,6 +1,7 @@
+[![GNOME Extensions](https://img.shields.io/badge/GNOME%20Extensions-Install-4A86CF?logo=gnome&logoColor=white)](https://extensions.gnome.org/extension/9307/github-tray/)
 [![Discord](https://img.shields.io/discord/1470772941296894128?color=5865F2&logo=discord&logoColor=white)](https://discord.gg/YrZPHAwMSG)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![GNOME Shell](https://img.shields.io/badge/GNOME%20Shell-45%2B-blue)
+![GNOME Shell](https://img.shields.io/badge/GNOME%20Shell-45--50-blue)
 ![Languages](https://img.shields.io/badge/i18n-EN%20%7C%20IT%20%7C%20DE%20%7C%20ES%20%7C%20FR-green)
 
 # GitHub Tray GNOME Extension
@@ -63,8 +64,11 @@ A GNOME Shell extension that puts your GitHub repos right in your top bar. Check
 ### Other
 
 - Auto-refresh with configurable intervals (repositories and notifications use separate timers)
+- Manual refresh with loading spinner and inline error screen with retry on fetch failure
 - Desktop notifications when repos gain new stars, issues, forks, or new followers
+- GitHub Enterprise Server support — point the extension at your self-hosted instance
 - Waiting screen when network is unavailable — loads automatically when connection is restored
+- In-flight requests are cancelled cleanly when the menu closes or settings change
 - Menu updates are queued while open and applied after closing to avoid flicker
 - All numbers use abbreviated formatting: 1500 → 1.5k, 2M → 2.0M
 - All dates shown as relative time: "just now", "5 min ago", "3 h ago", etc.
@@ -72,10 +76,16 @@ A GNOME Shell extension that puts your GitHub repos right in your top bar. Check
 
 ## Requirements
 
-- GNOME Shell 45+
+- GNOME Shell 45–50
 - libsoup3 (usually pre-installed)
 
 ## Installation
+
+### From GNOME Extensions (recommended)
+
+Install in one click from [extensions.gnome.org/extension/9307/github-tray](https://extensions.gnome.org/extension/9307/github-tray/).
+
+### From source
 
 ```bash
 git clone https://github.com/debba/github-tray-gnome-extension.git
@@ -113,6 +123,12 @@ Required scopes:
 > **Note**: The `repo` scope covers GitHub Actions. There is no separate `actions:read` scope.
 
 Copy the token and paste it in Settings.
+
+### GitHub Enterprise Server
+
+Using a self-hosted GitHub instance? In Settings → Authentication, set **GitHub Enterprise Server URL** to your instance base URL (e.g. `https://github.your-company.com`). Leave it empty to use github.com.
+
+The token must be created on the same Enterprise instance with the same scopes (`repo` or `public_repo`).
 
 ### Local projects
 
