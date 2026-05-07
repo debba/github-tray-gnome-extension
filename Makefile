@@ -37,4 +37,17 @@ clean:
 	rm -rf $(LOCALE_DIR)
 	rm -f $(UUID).zip
 
-.PHONY: all build schemas translations install uninstall pack clean
+release:
+	@CURRENT=$$(grep '"version":' metadata.json | sed -E 's/.*"version":[[:space:]]*([0-9]+).*/\1/'); \
+	if [ -z "$$CURRENT" ]; then echo "Could not read version from metadata.json"; exit 1; fi; \
+	NEW=$$((CURRENT + 1)); \
+	echo "Bumping version: $$CURRENT -> $$NEW"; \
+	sed -i -E "s/(\"version\":[[:space:]]*)[0-9]+/\1$$NEW/" metadata.json; \
+	git add metadata.json; \
+	git commit -m "chore: bump version to $$NEW"; \
+	git tag "v$$NEW"; \
+	git push origin HEAD; \
+	git push origin "v$$NEW"; \
+	echo "Released v$$NEW"
+
+.PHONY: all build schemas translations install uninstall pack clean release
