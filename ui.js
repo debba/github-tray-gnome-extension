@@ -1790,6 +1790,48 @@ export class GitHubTrayUI {
     }
   }
 
+  // Shows an error message with a clickable "Refresh" entry so the user can
+  // retry the failed load without having to reach the header refresh button.
+  showError(text, onRetry) {
+    if (!this._reposContainer) return;
+    try {
+      this._reposContainer.removeAll();
+
+      const messageItem = new PopupMenu.PopupMenuItem(text, {
+        reactive: false,
+        can_focus: false,
+      });
+      this._reposContainer.addMenuItem(messageItem);
+
+      const retryItem = new PopupMenu.PopupBaseMenuItem({
+        reactive: true,
+        can_focus: true,
+        style_class: "github-tray-error-retry",
+      });
+      const retryBox = new St.BoxLayout({
+        vertical: false,
+        x_expand: true,
+        x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
+        style: "spacing: 6px;",
+      });
+      const retryIcon = new St.Icon({
+        icon_name: "view-refresh-symbolic",
+        icon_size: 14,
+      });
+      const retryLabel = new St.Label({ text: _("Refresh") });
+      retryBox.add_child(retryIcon);
+      retryBox.add_child(retryLabel);
+      retryItem.add_child(retryBox);
+      retryItem.connect("activate", () => {
+        if (typeof onRetry === "function") onRetry();
+      });
+      this._reposContainer.addMenuItem(retryItem);
+    } catch (e) {
+      console.error(e, "GitHubTray:showError");
+    }
+  }
+
   // Clears the open menu and shows an in-place loading indicator.
   // Called on manual refresh so the user gets immediate feedback while the
   // GraphQL request is in flight.

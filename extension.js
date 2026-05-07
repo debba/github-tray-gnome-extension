@@ -202,7 +202,10 @@ export default class GitHubTrayExtension extends Extension {
       if (isCancelled(error)) return;
       console.error(error, "GitHubTray");
       if (this._indicator) {
-        this._ui.showMessage(_("Error loading repositories"));
+        this._ui.showError(_("Error loading repositories"), () => {
+          this._loadRepositories(true);
+          this._notificationManager.load();
+        });
         Main.notifyError(
           _("GitHub Tray"),
           _("Failed to fetch repositories: %s").format(error.message),
