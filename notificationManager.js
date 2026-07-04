@@ -7,7 +7,7 @@ export class NotificationManager {
    * @param {object} opts
    * @param {import('gi://Soup').Session} opts.httpSession
    * @param {import('gi://Gio').Settings} opts.settings
-   * @param {function(string, string, string|null): void} opts.sendNotification
+   * @param {function(string, string, string, string|null): void} opts.sendNotification - Sends category, summary, body, and optional URL
    * @param {object} opts.ui  - GitHubTrayUI instance
    */
   constructor({ httpSession, settings, sendNotification, ui, cancellable = null }) {
@@ -86,6 +86,7 @@ export class NotificationManager {
               url = subjectApiToWebUrl(newUnread[0].subject?.url, enterpriseUrl, newUnread[0].subject?.type) ?? url;
             }
             this._sendNotification(
+              "github-notifications",
               _("GitHub Notifications"),
               ngettext(
                 "%d new notification",
