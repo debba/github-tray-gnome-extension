@@ -7,7 +7,7 @@ export class WorkflowManager {
    * @param {object} opts
    * @param {import('gi://Soup').Session} opts.httpSession
    * @param {import('gi://Gio').Settings} opts.settings
-   * @param {function(string, string): void} opts.sendNotification
+   * @param {function(string, string, string, string|null): void} opts.sendNotification - Sends category, summary, body, and optional URL
    * @param {function(): object[]} opts.getMonitoredRepos
    * @param {function(): boolean} opts.isMenuOpen
    */
@@ -147,11 +147,13 @@ export class WorkflowManager {
 
     for (const newRun of newRuns) {
       const oldRun = oldRunsMap.get(newRun.id);
+      const notificationCategory = `workflow:${repo.full_name}:${newRun.id}`;
 
       // New workflow started
       if (!oldRun && newRun.status === "in_progress") {
         if (this._settings.get_boolean("notify-workflow-started")) {
           this._sendNotification(
+            notificationCategory,
             _("GitHub Actions: Workflow Started"),
             `${repo.name} • ${newRun.name}\n${newRun.head_branch}`,
             newRun.html_url ?? null,
@@ -166,6 +168,7 @@ export class WorkflowManager {
           if (this._settings.get_boolean("notify-workflow-success")) {
             const duration = this._getDuration(newRun);
             this._sendNotification(
+              notificationCategory,
               _("GitHub Actions: Workflow Succeeded"),
               `${repo.name} • ${newRun.name}\n${duration}`,
               newRun.html_url ?? null,
@@ -177,6 +180,7 @@ export class WorkflowManager {
         ) {
           if (this._settings.get_boolean("notify-workflow-failure")) {
             this._sendNotification(
+              notificationCategory,
               _("GitHub Actions: Workflow Failed"),
               `${repo.name} • ${newRun.name}\n${newRun.head_branch}`,
               newRun.html_url ?? null,
@@ -188,6 +192,7 @@ export class WorkflowManager {
         ) {
           if (this._settings.get_boolean("notify-workflow-cancelled")) {
             this._sendNotification(
+              notificationCategory,
               _("GitHub Actions: Workflow Cancelled"),
               `${repo.name} • ${newRun.name}`,
               newRun.html_url ?? null,

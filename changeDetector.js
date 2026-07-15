@@ -5,6 +5,8 @@ import * as MessageTray from "resource:///org/gnome/shell/ui/messageTray.js";
 import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 import { detectChanges, detectNewFollowers } from "./utils.js";
 
+const activeNotifications = new Map();
+
 export class ChangeDetector {
   /**
    * @param {object} opts
@@ -45,7 +47,7 @@ export class ChangeDetector {
         changes.starsGained.length === 1
           ? `${changes.starsGained[0].html_url}/stargazers`
           : null;
-      this._send(_("New Stars!"), starsMsg, starsUrl);
+      this._send("stars", _("New Stars!"), starsMsg, starsUrl);
     }
 
     if (changes.newIssues.length > 0) {
@@ -59,7 +61,7 @@ export class ChangeDetector {
         changes.newIssues.length === 1
           ? `${changes.newIssues[0].html_url}/issues`
           : null;
-      this._send(_("New Issues Opened"), issuesMsg, issuesUrl);
+      this._send("issues", _("New Issues Opened"), issuesMsg, issuesUrl);
     }
 
     if (changes.newForks.length > 0) {
@@ -73,7 +75,7 @@ export class ChangeDetector {
         changes.newForks.length === 1
           ? `${changes.newForks[0].html_url}/network/members`
           : null;
-      this._send(_("New Forks Created"), forksMsg, forksUrl);
+      this._send("forks", _("New Forks Created"), forksMsg, forksUrl);
     }
 
     const newFollowersList = detectNewFollowers(newFollowers, oldFollowers);
@@ -86,17 +88,17 @@ export class ChangeDetector {
         newFollowersList.length === 1
           ? (newFollowersList[0].html_url ?? null)
           : null;
-      this._send(_("New Followers"), followersMsg, followersUrl);
+      this._send("followers", _("New Followers"), followersMsg, followersUrl);
     }
   }
 
   // Sends a desktop notification via GLib idle to avoid blocking the main loop
-  _send(summary, body, url = null) {
+  _send(category, summary, body, url = null) {
     if (!summary || !body) return;
 
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
       try {
-        _createNotification(summary, body, url);
+        _createNotification(category, summary, body, url);
       } catch (e) {
         console.error(e, "GitHubTray:notify");
       }
@@ -114,6 +116,32 @@ export class ChangeDetector {
 
   destroy() {
     this.cleanup();
+    _destroyAllNotifications();
+  }
+}
+
+function _destroyNotification(category) {
+  const entry = activeNotifications.get(category);
+  if (!entry) return;
+
+  activeNotifications.delete(category);
+
+  try {
+    entry.notification.destroy();
+  } catch (e) {
+    console.error(e, "GitHubTray:destroyNotification");
+  }
+
+  try {
+    entry.source.destroy();
+  } catch (e) {
+    console.error(e, "GitHubTray:destroyNotificationSource");
+  }
+}
+
+function _destroyAllNotifications() {
+  for (const category of activeNotifications.keys()) {
+    _destroyNotification(category);
   }
 }
 
@@ -123,11 +151,15 @@ export class ChangeDetector {
  * persists in the notification center. If a URL is provided, an "Open" action
  * button is added to open it in the default browser.
  *
+ * @param {string} category - Replacement key for this notification category
  * @param {string} summary
  * @param {string} body
  * @param {string|null} url
  */
-function _createNotification(summary, body, url = null) {
+function _createNotification(category, summary, body, url = null) {
+  // Replace any existing notification in this category before showing a new one.
+  _destroyNotification(category);
+
   const source = new MessageTray.Source({
     title: "GitHub Tray",
     iconName: "github-symbolic",
@@ -152,6 +184,7 @@ function _createNotification(summary, body, url = null) {
     });
   }
 
+  activeNotifications.set(category, { source, notification });
   source.addNotification(notification);
 }
 
@@ -159,16 +192,17 @@ function _createNotification(summary, body, url = null) {
  * Standalone helper - sends a desktop notification via GLib idle.
  * Can be used outside of a ChangeDetector instance.
  *
+ * @param {string} category - Replacement key for this notification category
  * @param {string} summary
  * @param {string} body
  * @param {string|null} url - Optional URL to open when clicking "Open"
  */
-export function sendNotification(summary, body, url = null) {
+export function sendNotification(category, summary, body, url = null) {
   if (!summary || !body) return;
 
   GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
     try {
-      _createNotification(summary, body, url);
+      _createNotification(category, summary, body, url);
     } catch (e) {
       console.error(e, "GitHubTray:notify");
     }
