@@ -6,29 +6,29 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  validate:
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
+  publish:
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gettext
-
-      - name: Build package
-        run: make pack
+      - name: Download validated package
+        uses: actions/download-artifact@v8
+        with:
+          name: extension-package
 
       - name: Get tag name
         id: tag
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: github-tray@debba.github.com.zip
           name: Release ${{ steps.tag.outputs.TAG_NAME }}

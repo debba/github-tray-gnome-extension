@@ -9,6 +9,12 @@ import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.j
 // Number of notifications shown per page in the menu
 const NOTIFICATIONS_PAGE_SIZE = 10;
 
+// GNOME 48 introduced orientation; GNOME 45–47 still require vertical.
+const VERTICAL_LAYOUT =
+  "orientation" in St.BoxLayout.prototype
+    ? { orientation: Clutter.Orientation.VERTICAL }
+    : { vertical: true };
+
 const LANG_COLORS = {
   JavaScript: "#f1e05a",
   TypeScript: "#3178c6",
@@ -226,14 +232,13 @@ export class GitHubTrayUI {
         can_focus: false,
       });
       const headerBox = new St.BoxLayout({
-        vertical: true,
+        ...VERTICAL_LAYOUT,
         x_expand: true,
         style_class: "github-tray-header",
       });
 
       // First row: user info (avatar + username)
       const topRow = new St.BoxLayout({
-        vertical: false,
         x_expand: true,
         x_align: Clutter.ActorAlign.CENTER,
         y_align: Clutter.ActorAlign.CENTER,
@@ -241,7 +246,6 @@ export class GitHubTrayUI {
       });
 
       const userBox = new St.BoxLayout({
-        vertical: false,
         style_class: "github-tray-header-user-box",
       });
 
@@ -280,7 +284,6 @@ export class GitHubTrayUI {
 
       // Header action buttons (refresh, settings, debug)
       const headerActionsBox = new St.BoxLayout({
-        vertical: false,
         style: "spacing: 4px;",
         y_align: Clutter.ActorAlign.CENTER,
       });
@@ -338,7 +341,6 @@ export class GitHubTrayUI {
 
       // Second row: badges (centered)
       const badgesRow = new St.BoxLayout({
-        vertical: false,
         x_expand: true,
         x_align: Clutter.ActorAlign.CENTER,
         y_align: Clutter.ActorAlign.CENTER,
@@ -348,7 +350,6 @@ export class GitHubTrayUI {
 
       if (userInfo?.followers !== undefined) {
         const followersBox = new St.BoxLayout({
-          vertical: false,
           style_class: "github-tray-header-badge github-tray-header-followers",
         });
         const followersIcon = new St.Label({
@@ -365,7 +366,6 @@ export class GitHubTrayUI {
       }
 
       const reposCountBox = new St.BoxLayout({
-        vertical: false,
         style_class: "github-tray-header-badge github-tray-header-repos",
       });
       const reposIcon = new St.Label({
@@ -381,7 +381,6 @@ export class GitHubTrayUI {
       badgesRow.add_child(reposCountBox);
 
       const starsBox = new St.BoxLayout({
-        vertical: false,
         style_class: "github-tray-header-badge github-tray-header-stars",
       });
 
@@ -460,7 +459,6 @@ export class GitHubTrayUI {
       can_focus: false,
     });
     const titleBox = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       style_class: "github-tray-notification-header",
     });
@@ -562,7 +560,6 @@ export class GitHubTrayUI {
     });
 
     const headerBox = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-accordion-header-box",
@@ -591,7 +588,6 @@ export class GitHubTrayUI {
     });
 
     const toggleBox = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
       style: "spacing: 8px;",
@@ -755,7 +751,6 @@ export class GitHubTrayUI {
     });
 
     const pagerBox = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-notifications-pager-box",
@@ -890,13 +885,12 @@ export class GitHubTrayUI {
     });
 
     const mainBox = new St.BoxLayout({
-      vertical: true,
+      ...VERTICAL_LAYOUT,
       x_expand: true,
       style_class: "github-tray-workflow-box",
     });
 
     const topRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-workflow-top-row",
@@ -967,7 +961,6 @@ export class GitHubTrayUI {
 
     // Repository and branch info
     const infoRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       style_class: "github-tray-workflow-info-row",
     });
@@ -988,7 +981,6 @@ export class GitHubTrayUI {
 
     // Status and timing info
     const metaRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       style_class: "github-tray-workflow-meta-row",
     });
@@ -1172,13 +1164,12 @@ export class GitHubTrayUI {
     });
 
     const mainBox = new St.BoxLayout({
-      vertical: true,
+      ...VERTICAL_LAYOUT,
       x_expand: true,
       style_class: "github-tray-notification-box",
     });
 
     const topRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-notification-top-row",
@@ -1273,7 +1264,6 @@ export class GitHubTrayUI {
     mainBox.add_child(topRow);
 
     const titleRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
@@ -1347,14 +1337,13 @@ export class GitHubTrayUI {
     const localPath = this._getLocalPath(repo.full_name);
 
     const mainBox = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.START,
       style: "spacing: 6px;",
     });
 
     const outerBox = new St.BoxLayout({
-      vertical: true,
+      ...VERTICAL_LAYOUT,
       x_expand: true,
       style_class: localPath
         ? "github-tray-repo-box-local"
@@ -1362,7 +1351,6 @@ export class GitHubTrayUI {
     });
 
     const topRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-top-row",
@@ -1398,7 +1386,6 @@ export class GitHubTrayUI {
     if (repo.language) {
       const langColor = LANG_COLORS[repo.language] || "#8b949e";
       const langBox = new St.BoxLayout({
-        vertical: false,
         style_class: "github-tray-repo-lang-box",
         style: "spacing: 4px;",
         y_align: Clutter.ActorAlign.CENTER,
@@ -1421,7 +1408,6 @@ export class GitHubTrayUI {
 
     if (repo.fork && repo.parent) {
       const linksRow = new St.BoxLayout({
-        vertical: false,
         style_class: "github-tray-links-row",
       });
 
@@ -1444,14 +1430,12 @@ export class GitHubTrayUI {
     }
 
     const statsRow = new St.BoxLayout({
-      vertical: false,
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-stats-row",
     });
 
     // Stars
     const starsBox = new St.BoxLayout({
-      vertical: false,
       style_class: "github-tray-stat",
     });
     const starsIcon = this._makeOcticonIcon(
@@ -1483,7 +1467,6 @@ export class GitHubTrayUI {
 
     // Forks
     const forksBox = new St.BoxLayout({
-      vertical: false,
       style_class: "github-tray-stat",
     });
     const forksIcon = this._makeOcticonIcon(
@@ -1527,7 +1510,6 @@ export class GitHubTrayUI {
 
     // Issues
     const issuesBox = new St.BoxLayout({
-      vertical: false,
       style_class: "github-tray-stat",
     });
     const issuesIcon = this._makeOcticonIcon(
@@ -1562,7 +1544,6 @@ export class GitHubTrayUI {
 
     // Pull Requests
     const pullsBox = new St.BoxLayout({
-      vertical: false,
       style_class: "github-tray-stat",
     });
     const pullsIcon = this._makeOcticonIcon(
@@ -1621,7 +1602,6 @@ export class GitHubTrayUI {
 
     // Action buttons (workflow and folder) under description, aligned to the right
     const sideButtonsBox = new St.BoxLayout({
-      vertical: false,
       y_align: Clutter.ActorAlign.CENTER,
       style: "spacing: 4px;",
     });
@@ -1727,7 +1707,6 @@ export class GitHubTrayUI {
 
     // Actions row - bottom right under description
     const actionsRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       x_align: Clutter.ActorAlign.END,
       y_align: Clutter.ActorAlign.CENTER,
@@ -1809,7 +1788,6 @@ export class GitHubTrayUI {
         style_class: "github-tray-error-retry",
       });
       const retryBox = new St.BoxLayout({
-        vertical: false,
         x_expand: true,
         x_align: Clutter.ActorAlign.CENTER,
         y_align: Clutter.ActorAlign.CENTER,
@@ -1849,7 +1827,6 @@ export class GitHubTrayUI {
         style_class: "github-tray-loading-item",
       });
       const box = new St.BoxLayout({
-        vertical: false,
         x_expand: true,
         x_align: Clutter.ActorAlign.CENTER,
         y_align: Clutter.ActorAlign.CENTER,
@@ -1887,13 +1864,12 @@ export class GitHubTrayUI {
       can_focus: false,
     });
     const headerBox = new St.BoxLayout({
-      vertical: true,
+      ...VERTICAL_LAYOUT,
       x_expand: true,
       style_class: "github-tray-header",
     });
 
     const topRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
@@ -1929,7 +1905,6 @@ export class GitHubTrayUI {
     headerBox.add_child(topRow);
 
     const titleRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       style_class: "github-tray-issues-title-row",
     });
@@ -1970,13 +1945,12 @@ export class GitHubTrayUI {
       can_focus: false,
     });
     const headerBox = new St.BoxLayout({
-      vertical: true,
+      ...VERTICAL_LAYOUT,
       x_expand: true,
       style_class: "github-tray-header",
     });
 
     const topRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
@@ -2012,7 +1986,6 @@ export class GitHubTrayUI {
     headerBox.add_child(topRow);
 
     const titleRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       style_class: "github-tray-issues-title-row",
     });
@@ -2046,13 +2019,12 @@ export class GitHubTrayUI {
     });
 
     const mainBox = new St.BoxLayout({
-      vertical: true,
+      ...VERTICAL_LAYOUT,
       x_expand: true,
       style_class: "github-tray-issue-box",
     });
 
     const topRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
       style_class: "github-tray-issue-top-row",
@@ -2095,7 +2067,6 @@ export class GitHubTrayUI {
 
     if (issue.labels && issue.labels.length > 0) {
       const labelsRow = new St.BoxLayout({
-        vertical: false,
         x_expand: true,
         style_class: "github-tray-issue-labels-row",
       });
@@ -2118,7 +2089,6 @@ export class GitHubTrayUI {
     }
 
     const metaRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       style_class: "github-tray-issue-meta-row",
     });
@@ -2175,13 +2145,12 @@ export class GitHubTrayUI {
       can_focus: false,
     });
     const headerBox = new St.BoxLayout({
-      vertical: true,
+      ...VERTICAL_LAYOUT,
       x_expand: true,
       style_class: "github-tray-header",
     });
 
     const topRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
@@ -2217,7 +2186,6 @@ export class GitHubTrayUI {
     headerBox.add_child(topRow);
 
     const titleRow = new St.BoxLayout({
-      vertical: false,
       x_expand: true,
       style_class: "github-tray-workflow-title-row",
     });
