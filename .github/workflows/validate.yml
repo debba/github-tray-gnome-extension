@@ -1,0 +1,57 @@
+name: Validate extension
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: ci/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext gjs zip libglib2.0-bin
+          python -m pip install -r ci/requirements.txt
+
+      - name: Check schema and regressions
+        run: |
+          glib-compile-schemas --strict --dry-run schemas
+          gjs -m tests/detectChanges.js
+          python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: Build package
+        run: make pack
+
+      - name: Check release package with Shexli
+        run: python scripts/check_shexli.py github-tray@debba.github.com.zip
+
+      - name: Upload analysis report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shexli-report
+          path: shexli-report.json
+          if-no-files-found: ignore
+
+      - name: Upload validated package
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-package
+          path: github-tray@debba.github.com.zip
+          if-no-files-found: error

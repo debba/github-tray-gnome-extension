@@ -7,3 +7,6 @@ locale/
 .vscode/
 *.swp
 *~
+__pycache__/
+.venv/
+shexli-report.json

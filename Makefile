@@ -30,7 +30,7 @@ uninstall:
 
 pack: build
 	@rm -f $(UUID).zip
-	zip -r $(UUID).zip $(JS_FILES) metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(LOCALE_DIR)
+	zip -r $(UUID).zip $(JS_FILES) metadata.json stylesheet.css $(SCHEMAS_DIR) ui $(LOCALE_DIR) -x '$(SCHEMAS_DIR)/gschemas.compiled'
 	@echo "Package created: $(UUID).zip"
 
 clean:

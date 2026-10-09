@@ -6,22 +6,22 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  validate:
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
+  publish:
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gettext
-
-      - name: Build package
-        run: make pack
+      - name: Download validated package
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-package
 
       - name: Get tag name
         id: tag
