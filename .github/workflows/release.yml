@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Download validated package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: extension-package
 
@@ -28,7 +28,7 @@ jobs:
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: github-tray@debba.github.com.zip
           name: Release ${{ steps.tag.outputs.TAG_NAME }}
