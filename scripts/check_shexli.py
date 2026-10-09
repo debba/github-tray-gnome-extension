@@ -1,4 +1,4 @@
-"""Analyze the release ZIP and fail on Shexli errors, preserving all findings."""
+"""Analyze the release ZIP and fail on Shexli errors and warnings."""
 
 import argparse
 import json
@@ -28,7 +28,7 @@ def is_gnome51_false_positive(finding, metadata):
 def blocking_findings(report, metadata):
     return [
         finding for finding in report["findings"]
-        if finding["severity"] == "error"
+        if finding["severity"] in {"error", "warning"}
         and not is_gnome51_false_positive(finding, metadata)
     ]
 
@@ -49,22 +49,22 @@ def main():
     )
     report = json.loads(result.stdout)
     args.report.write_text(result.stdout, encoding="utf-8")
-    errors = blocking_findings(report, metadata)
+    blocking = blocking_findings(report, metadata)
     for finding in report["findings"]:
         note = " (known GNOME 51 false positive in Shexli 0.2.1)" if is_gnome51_false_positive(finding, metadata) else ""
         print(f"{finding['rule_id']} {finding['severity']}{note}: {finding['message']}")
         for evidence in finding.get("evidence", []):
             print(f"  {evidence['path']}:{evidence.get('line') or ''}")
 
-    summary = f"Shexli: {len(report['findings'])} findings, {len(errors)} blocking errors."
+    summary = f"Shexli: {len(report['findings'])} findings, {len(blocking)} blocking findings."
     print(summary)
     if summary_path := os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(summary_path, "a", encoding="utf-8") as output:
             output.write(f"### Extension package validation\n\n{summary}\n\n")
-            output.write("Warnings and manual review findings remain in the JSON report and job log.\n")
+            output.write("Errors and warnings block publication. Manual review findings remain in the JSON report and job log.\n")
             if any(is_gnome51_false_positive(f, metadata) for f in report["findings"]):
                 output.write("\nShexli 0.2.1's obsolete GNOME 50 ceiling is waived only for valid GNOME 45–51 metadata.\n")
-    return 1 if errors else 0
+    return 1 if blocking else 0
 
 
 if __name__ == "__main__":
