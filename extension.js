@@ -525,6 +525,10 @@ export default class GitHubTrayExtension extends Extension {
   }
 
   _destroyIndicator() {
+    if (this._icon) {
+      this._icon.destroy();
+      this._icon = null;
+    }
     if (this._indicator) {
       this._indicator.destroy();
       this._indicator = null;

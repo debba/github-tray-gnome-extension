@@ -25,11 +25,13 @@ make pack
 .venv/bin/python scripts/check_shexli.py github-tray@debba.github.com.zip
 ```
 
-Errors block publication. Warnings and manual review findings remain visible in the job log and report, but do not block it. Shexli is an experimental check and does not replace GNOME's review or runtime testing.
+Errors and warnings block publication. Manual review findings remain visible in the job log and report, but do not block it. Shexli is an experimental check and does not replace GNOME's review or runtime testing.
 
 The tool and parser versions are pinned for repeatable checks. Tree-sitter 0.26.0 crashes with the 0.25.0 JavaScript grammar on this package, so the compatible 0.25.2 core is used.
 
 Shexli 0.2.1 also hardcodes GNOME 50 as its highest accepted version and returns success even when it finds errors. The wrapper checks the JSON findings and narrowly waives that obsolete `EGO-M-004` finding only when all declared versions are unique, stable GNOME 45–51 strings and include 51. Other metadata errors remain blocking. Remove this exception when upgrading to a Shexli version that recognizes GNOME 51.
+
+The GNOME Extensions website runs its own analyzer, so this local exception cannot change the website's report. A submission targeting GNOME 51 may still show `EGO-M-004` there. Explain the outdated analyzer ceiling to the reviewer and keep `"51"` in the metadata; removing it would make the extension unavailable on GNOME 51. The analyzer report and the submission's review status are separate.
 
 ## Publish an update on GNOME Extensions
 

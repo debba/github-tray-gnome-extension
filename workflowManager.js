@@ -28,11 +28,16 @@ export class WorkflowManager {
     return this._monitoredWorkflowRuns;
   }
 
+  _debugLog(...args) {
+    const debug = this._settings?.get_boolean("debug-mode");
+    if (debug) console.log(...args);
+  }
+
   // Fetches workflow runs for a single repo (used by the UI on demand)
   async fetchForRepo(repo, callback) {
     const token = this._settings?.get_string("github-token");
     if (!token) {
-      console.log(`[GitHubTray] No token available for fetching workflow runs`);
+      this._debugLog(`[GitHubTray] No token available for fetching workflow runs`);
       callback([]);
       return;
     }
@@ -41,7 +46,7 @@ export class WorkflowManager {
       const api = new GitHubApi(this._httpSession, this._settings.get_string("github-enterprise-url"));
       const [owner, repoName] = repo.full_name.split("/");
       const maxRuns = this._settings.get_int("workflow-runs-max-display") || 10;
-      console.log(
+      this._debugLog(
         `[GitHubTray] Fetching workflow runs for ${owner}/${repoName} (max: ${maxRuns})`,
       );
       const workflowRuns = await api.fetchRepoWorkflowRuns(
@@ -51,7 +56,7 @@ export class WorkflowManager {
         maxRuns,
         this._cancellable,
       );
-      console.log(
+      this._debugLog(
         `[GitHubTray] Fetched ${workflowRuns ? workflowRuns.length : 0} workflow runs for ${repo.full_name}`,
       );
       callback(workflowRuns);
@@ -73,7 +78,7 @@ export class WorkflowManager {
     const monitoredRepos = this._getMonitoredRepos();
     if (monitoredRepos.length === 0) return;
 
-    console.log(
+    this._debugLog(
       `[GitHubTray] Loading workflow runs for ${monitoredRepos.length} monitored repos`,
     );
 

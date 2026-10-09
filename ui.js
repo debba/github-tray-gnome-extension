@@ -83,6 +83,15 @@ export class GitHubTrayUI {
     this._notificationsAccordionPager = null;
   }
 
+  _debugLog(...args) {
+    const debug = this._settings?.get_boolean("debug-mode");
+    if (debug) console.log(...args);
+  }
+
+  _logError(error, context) {
+    console.error(error, context);
+  }
+
   // Returns the base web URL for GitHub.com or a GitHub Enterprise instance
   _ghBaseUrl() {
     const enterpriseUrl = this._settings?.get_string("github-enterprise-url") || "";
@@ -202,7 +211,7 @@ export class GitHubTrayUI {
   }
 
   updateMenu(repos, username, userInfo = null, notifications = []) {
-    console.log(
+    this._debugLog(
       `[GitHubTray UI] updateMenu called - repos: ${repos.length}, notifications: ${notifications.length}`,
     );
     try {
@@ -270,7 +279,7 @@ export class GitHubTrayUI {
             null,
           );
         } catch (e) {
-          console.error(e, "GitHubTray:open-profile");
+          this._logError(e, "GitHubTray:open-profile");
         }
         this._indicator.menu.close();
       });
@@ -407,36 +416,36 @@ export class GitHubTrayUI {
         this._settings.get_boolean("show-notifications");
       const showRepos = repos.length > 0;
 
-      console.log(
+      this._debugLog(
         `[GitHubTray UI] Section visibility - Notifications: ${showNotifications} (setting: ${this._settings.get_boolean("show-notifications")}, count: ${unreadNotifications.length})`,
       );
-      console.log(
+      this._debugLog(
         `[GitHubTray UI] Section visibility - Repos: ${showRepos} (count: ${repos.length})`,
       );
 
       const sectionsCount = [showNotifications, showRepos].filter(
         Boolean,
       ).length;
-      console.log(`[GitHubTray UI] Total sections to show: ${sectionsCount}`);
+      this._debugLog(`[GitHubTray UI] Total sections to show: ${sectionsCount}`);
 
       if (sectionsCount > 1) {
         // Use accordions when multiple sections are present
-        console.log(
+        this._debugLog(
           "[GitHubTray UI] Using accordion layout (multiple sections)",
         );
         if (showNotifications) {
-          console.log("[GitHubTray UI] Building notifications accordion");
+          this._debugLog("[GitHubTray UI] Building notifications accordion");
           this._buildNotificationsAccordion(unreadNotifications);
         }
         if (showRepos) {
-          console.log("[GitHubTray UI] Building repos accordion");
+          this._debugLog("[GitHubTray UI] Building repos accordion");
           this._buildReposAccordion(repos);
         }
       } else {
         // Show sections directly without accordions
-        console.log("[GitHubTray UI] Using direct layout (single section)");
+        this._debugLog("[GitHubTray UI] Using direct layout (single section)");
         if (showNotifications) {
-          console.log("[GitHubTray UI] Building notifications section");
+          this._debugLog("[GitHubTray UI] Building notifications section");
           this._buildNotificationsSection(unreadNotifications);
         }
         if (repos.length === 0) {
@@ -449,7 +458,7 @@ export class GitHubTrayUI {
         }
       }
     } catch (e) {
-      console.error(e, "GitHubTray:updateMenu");
+      this._logError(e, "GitHubTray:updateMenu");
     }
   }
 
@@ -482,7 +491,7 @@ export class GitHubTrayUI {
           null,
         );
       } catch (e) {
-        console.error(e, "GitHubTray:open-notifications");
+        this._logError(e, "GitHubTray:open-notifications");
       }
       this._indicator.menu.close();
     });
@@ -642,7 +651,7 @@ export class GitHubTrayUI {
           null,
         );
       } catch (e) {
-        console.error(e, "GitHubTray:open-notifications");
+        this._logError(e, "GitHubTray:open-notifications");
       }
       this._indicator.menu.close();
     });
@@ -920,7 +929,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(run.html_url, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-workflow");
+        this._logError(e, "GitHubTray:open-workflow");
       }
       this._indicator.menu.close();
     });
@@ -1010,7 +1019,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(run.html_url, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-workflow-activate");
+        this._logError(e, "GitHubTray:open-workflow-activate");
       }
       this._indicator.menu.close();
     });
@@ -1102,7 +1111,7 @@ export class GitHubTrayUI {
           null,
         );
       } catch (e) {
-        console.error(e, "GitHubTray:open-repositories");
+        this._logError(e, "GitHubTray:open-repositories");
       }
       this._indicator.menu.close();
     });
@@ -1320,7 +1329,7 @@ export class GitHubTrayUI {
     try {
       Gio.AppInfo.launch_default_for_uri(url, null);
     } catch (e) {
-      console.error(e, "GitHubTray:open-notification");
+      this._logError(e, "GitHubTray:open-notification");
     }
     if (this._onMarkNotificationRead) {
       this._onMarkNotificationRead(notification, () => {});
@@ -1377,7 +1386,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(repo.html_url, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-repo");
+        this._logError(e, "GitHubTray:open-repo");
       }
       this._indicator.menu.close();
     });
@@ -1420,7 +1429,7 @@ export class GitHubTrayUI {
         try {
           Gio.AppInfo.launch_default_for_uri(repo.parent.html_url, null);
         } catch (e) {
-          console.error(e, "GitHubTray:open-fork");
+          this._logError(e, "GitHubTray:open-fork");
         }
         this._indicator.menu.close();
       });
@@ -1459,7 +1468,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/stargazers`, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-stars");
+        this._logError(e, "GitHubTray:open-stars");
       }
       this._indicator.menu.close();
     });
@@ -1493,7 +1502,7 @@ export class GitHubTrayUI {
           null,
         );
       } catch (e) {
-        console.error(e, "GitHubTray:open-forks");
+        this._logError(e, "GitHubTray:open-forks");
       }
       this._indicator.menu.close();
     });
@@ -1535,7 +1544,7 @@ export class GitHubTrayUI {
         try {
           Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/issues`, null);
         } catch (e) {
-          console.error(e, "GitHubTray:open-issues");
+          this._logError(e, "GitHubTray:open-issues");
         }
         this._indicator.menu.close();
       }
@@ -1569,7 +1578,7 @@ export class GitHubTrayUI {
         try {
           Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/pulls`, null);
         } catch (e) {
-          console.error(e, "GitHubTray:open-pulls");
+          this._logError(e, "GitHubTray:open-pulls");
         }
         this._indicator.menu.close();
       }
@@ -1628,7 +1637,7 @@ export class GitHubTrayUI {
               null,
             );
           } catch (e) {
-            console.error(e, "GitHubTray:open-issues-compact");
+            this._logError(e, "GitHubTray:open-issues-compact");
           }
           this._indicator.menu.close();
         }
@@ -1658,7 +1667,7 @@ export class GitHubTrayUI {
               null,
             );
           } catch (e) {
-            console.error(e, "GitHubTray:open-pulls-compact");
+            this._logError(e, "GitHubTray:open-pulls-compact");
           }
           this._indicator.menu.close();
         }
@@ -1722,7 +1731,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(repo.html_url, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-uri");
+        this._logError(e, "GitHubTray:open-uri");
       }
       this._indicator.menu.close();
     });
@@ -1751,7 +1760,7 @@ export class GitHubTrayUI {
 
       Gio.Subprocess.new([editor, path], Gio.SubprocessFlags.NONE);
     } catch (e) {
-      console.error(e, "GitHubTray:open-local");
+      this._logError(e, "GitHubTray:open-local");
     }
   }
 
@@ -1765,7 +1774,7 @@ export class GitHubTrayUI {
       });
       this._reposContainer.addMenuItem(item);
     } catch (e) {
-      console.error(e, "GitHubTray:showMessage");
+      this._logError(e, "GitHubTray:showMessage");
     }
   }
 
@@ -1806,7 +1815,7 @@ export class GitHubTrayUI {
       });
       this._reposContainer.addMenuItem(retryItem);
     } catch (e) {
-      console.error(e, "GitHubTray:showError");
+      this._logError(e, "GitHubTray:showError");
     }
   }
 
@@ -1846,7 +1855,7 @@ export class GitHubTrayUI {
       loadingItem.add_child(box);
       this._reposContainer.addMenuItem(loadingItem);
     } catch (e) {
-      console.error(e, "GitHubTray:showLoading");
+      this._logError(e, "GitHubTray:showLoading");
     }
   }
 
@@ -1896,7 +1905,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/issues`, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-issues-browser");
+        this._logError(e, "GitHubTray:open-issues-browser");
       }
       this._indicator.menu.close();
     });
@@ -1977,7 +1986,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/pulls`, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-pulls-browser");
+        this._logError(e, "GitHubTray:open-pulls-browser");
       }
       this._indicator.menu.close();
     });
@@ -2057,7 +2066,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(issue.html_url, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-issue");
+        this._logError(e, "GitHubTray:open-issue");
       }
       this._indicator.menu.close();
     });
@@ -2119,7 +2128,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(issue.html_url, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-issue-activate");
+        this._logError(e, "GitHubTray:open-issue-activate");
       }
       this._indicator.menu.close();
     });
@@ -2128,7 +2137,7 @@ export class GitHubTrayUI {
   }
 
   showWorkflowRunsView(repo, workflowRuns) {
-    console.log(
+    this._debugLog(
       `[GitHubTray UI] showWorkflowRunsView called for ${repo.name} with ${workflowRuns ? workflowRuns.length : 0} workflow runs`,
     );
 
@@ -2177,7 +2186,7 @@ export class GitHubTrayUI {
       try {
         Gio.AppInfo.launch_default_for_uri(`${repo.html_url}/actions`, null);
       } catch (e) {
-        console.error(e, "GitHubTray:open-actions-browser");
+        this._logError(e, "GitHubTray:open-actions-browser");
       }
       this._indicator.menu.close();
     });
@@ -2202,12 +2211,12 @@ export class GitHubTrayUI {
     this._headerSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
     if (!workflowRuns || workflowRuns.length === 0) {
-      console.log(`[GitHubTray UI] No workflow runs to display`);
+      this._debugLog(`[GitHubTray UI] No workflow runs to display`);
       this.showMessage(_("No workflow runs found"));
       return;
     }
 
-    console.log(
+    this._debugLog(
       `[GitHubTray UI] Creating ${workflowRuns.length} workflow run items`,
     );
     for (const run of workflowRuns) {

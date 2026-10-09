@@ -32,8 +32,12 @@ class ShexliGateTests(unittest.TestCase):
         error = {**self.gnome51_finding, "message": "Missing shell-version"}
         self.assertEqual(blocking_findings({"findings": [error]}, self.metadata), [error])
 
-    def test_warnings_and_manual_review_do_not_block(self):
-        report = {"findings": [{"rule_id": "EGO-A-004", "severity": severity} for severity in ["warning", "manual_review"]]}
+    def test_warnings_block(self):
+        warning = {"rule_id": "EGO-A-004", "severity": "warning"}
+        self.assertEqual(blocking_findings({"findings": [warning]}, self.metadata), [warning])
+
+    def test_manual_review_does_not_block(self):
+        report = {"findings": [{"rule_id": "EGO-A-005", "severity": "manual_review"}]}
         self.assertEqual(blocking_findings(report, self.metadata), [])
 
 
