@@ -1,7 +1,7 @@
 [![GNOME Extensions](https://img.shields.io/badge/GNOME%20Extensions-Install-4A86CF?logo=gnome&logoColor=white)](https://extensions.gnome.org/extension/9307/github-tray/)
 [![Discord](https://img.shields.io/discord/1470772941296894128?color=5865F2&logo=discord&logoColor=white)](https://discord.gg/YrZPHAwMSG)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![GNOME Shell](https://img.shields.io/badge/GNOME%20Shell-45--50-blue)
+![GNOME Shell](https://img.shields.io/badge/GNOME%20Shell-45--51-blue)
 ![Languages](https://img.shields.io/badge/i18n-EN%20%7C%20IT%20%7C%20DE%20%7C%20ES%20%7C%20FR-green)
 
 # GitHub Tray GNOME Extension
@@ -76,7 +76,7 @@ A GNOME Shell extension that puts your GitHub repos right in your top bar. Check
 
 ## Requirements
 
-- GNOME Shell 45–50
+- GNOME Shell 45–51
 - libsoup3 (usually pre-installed)
 
 ## Installation

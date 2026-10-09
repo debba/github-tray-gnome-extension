@@ -27,7 +27,7 @@ export function detectChanges(newRepos, oldRepos) {
       r.id,
       {
         stars: r.stargazers_count,
-        issues: r.open_issues_count,
+        issues: r._issuesCount ?? r.open_issues_count - (r._pullsCount ?? 0),
         forks: r.forks_count,
         name: r.name,
       },
@@ -49,8 +49,11 @@ export function detectChanges(newRepos, oldRepos) {
       starsGained.push({ name: repo.name, diff: diff, html_url: repo.html_url });
     }
 
-    if (repo.open_issues_count > oldData.issues) {
-      const diff = repo.open_issues_count - oldData.issues;
+    // GitHub's REST-compatible total also includes pull requests.
+    const issuesCount =
+      repo._issuesCount ?? repo.open_issues_count - (repo._pullsCount ?? 0);
+    if (issuesCount > oldData.issues) {
+      const diff = issuesCount - oldData.issues;
       newIssues.push({ name: repo.name, diff: diff, html_url: repo.html_url });
     }
 

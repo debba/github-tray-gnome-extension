@@ -294,7 +294,11 @@ export default class GitHubTrayExtension extends Extension {
             clone.stargazers_count += Math.floor(Math.random() * 5) + 1;
           }
           if (Math.random() > 0.7) {
-            clone.open_issues_count += Math.floor(Math.random() * 3) + 1;
+            const newIssues = Math.floor(Math.random() * 3) + 1;
+            clone._issuesCount =
+              (clone._issuesCount ??
+                clone.open_issues_count - (clone._pullsCount ?? 0)) + newIssues;
+            clone.open_issues_count += newIssues;
           }
           if (Math.random() > 0.8) {
             clone.forks_count += Math.floor(Math.random() * 2) + 1;
