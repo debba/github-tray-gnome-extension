@@ -77,7 +77,7 @@
 }
 
 .github-tray-font-large .github-tray-header-icon {
-    font-size: 11px;
+    icon-size: 11px;
 }
 
 .github-tray-font-large .github-tray-repo-name {
@@ -144,7 +144,7 @@
 }
 
 .github-tray-font-medium .github-tray-accordion-arrow {
-    font-size: 11px;
+    icon-size: 11px;
 }
 
 .github-tray-font-medium .github-tray-accordion-title {
@@ -180,7 +180,7 @@
 }
 
 .github-tray-font-medium .github-tray-issue-state-icon {
-    font-size: 11px;
+    icon-size: 11px;
 }
 
 .github-tray-font-medium .github-tray-issue-label-more {
@@ -188,7 +188,7 @@
 }
 
 .github-tray-font-large .github-tray-accordion-arrow {
-    font-size: 12px;
+    icon-size: 12px;
 }
 
 .github-tray-font-large .github-tray-accordion-title {
@@ -224,7 +224,7 @@
 }
 
 .github-tray-font-large .github-tray-issue-state-icon {
-    font-size: 12px;
+    icon-size: 12px;
 }
 
 .github-tray-font-large .github-tray-issue-label-more {
@@ -314,7 +314,7 @@
 }
 
 .github-tray-header-icon {
-    font-size: 9px;
+    icon-size: 9px;
     y-align: center;
 }
 
@@ -465,15 +465,21 @@
 }
 
 .github-tray-repo-lang-dot {
-    font-size: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 99px;
 }
 
 .github-tray-font-medium .github-tray-repo-lang-dot {
-    font-size: 9px;
+    width: 9px;
+    height: 9px;
+    border-radius: 99px;
 }
 
 .github-tray-font-large .github-tray-repo-lang-dot {
-    font-size: 10px;
+    width: 10px;
+    height: 10px;
+    border-radius: 99px;
 }
 
 .github-tray-repo-lang-text {
@@ -735,7 +741,7 @@
 }
 
 .github-tray-issue-state-icon {
-    font-size: 10px;
+    icon-size: 10px;
 }
 
 .github-tray-issue-number {
@@ -1046,7 +1052,7 @@
 }
 
 .github-tray-accordion-arrow {
-    font-size: 10px;
+    icon-size: 10px;
     color: #6e7681;
     min-width: 16px;
 }
@@ -1135,7 +1141,7 @@
 }
 
 .github-tray-workflow-status-icon {
-    font-size: 10px;
+    icon-size: 10px;
 }
 
 .github-tray-workflow-name {
@@ -1218,7 +1224,7 @@
 }
 
 .github-tray-font-medium .github-tray-workflow-status-icon {
-    font-size: 11px;
+    icon-size: 11px;
 }
 
 .github-tray-font-medium .github-tray-workflow-name {
@@ -1245,7 +1251,7 @@
 }
 
 .github-tray-font-large .github-tray-workflow-status-icon {
-    font-size: 12px;
+    icon-size: 12px;
 }
 
 .github-tray-font-large .github-tray-workflow-name {
@@ -1295,4 +1301,28 @@
     color: #8b949e;
     min-width: 40px;
     text-align: center;
+}
+
+.github-tray-icon-label {
+    spacing: 4px;
+}
+
+.workflow-pending {
+    color: #d29922;
+}
+
+.workflow-success {
+    color: #3fb950;
+}
+
+.workflow-failure {
+    color: #f85149;
+}
+
+.workflow-inactive {
+    color: #8b949e;
+}
+
+.workflow-other {
+    color: #58a6ff;
 }

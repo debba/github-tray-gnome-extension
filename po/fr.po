@@ -134,8 +134,8 @@ msgstr "Tout afficher"
 msgid "Repositories"
 msgstr "Dépôts"
 
-msgid "← Back"
-msgstr "← Retour"
+msgid "Back"
+msgstr "Retour"
 
 msgid "Issues"
 msgstr "Issues"
@@ -441,8 +441,8 @@ msgstr "Mode débogage"
 msgid "Show debug button in menu to test notifications"
 msgstr "Afficher le bouton de débogage dans le menu pour tester les notifications"
 
-msgid "🔀 parent"
-msgstr "🔀 parent"
+msgid "parent"
+msgstr "parent"
 
 msgid "Updated %s"
 msgstr "Mis à jour %s"
@@ -455,3 +455,17 @@ msgstr "Ouvrir localement"
 
 msgid "Copy URL"
 msgstr "Copier l'URL"
+
+msgid "Previous page"
+msgstr "Page précédente"
+
+msgid "Next page"
+msgstr "Page suivante"
+
+msgid "Mark as read"
+msgstr "Marquer comme lue"
+
+msgid "star"
+msgid_plural "stars"
+msgstr[0] "étoile"
+msgstr[1] "étoiles"

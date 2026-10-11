@@ -7,6 +7,12 @@ all: build
 
 build: translations
 
+test:
+	glib-compile-schemas --strict --dry-run $(SCHEMAS_DIR)
+	gjs -m tests/detectChanges.js
+	node --experimental-vm-modules --test tests/reviewFixes.test.mjs
+	python3 -m unittest discover -s tests -p 'test_*.py'
+
 translations:
 	@for po in po/*.po; do \
 		lang=$$(basename $$po .po); \
@@ -50,4 +56,4 @@ release:
 	git push origin "v$$NEW"; \
 	echo "Released v$$NEW"
 
-.PHONY: all build schemas translations install uninstall pack clean release
+.PHONY: all build test schemas translations install uninstall pack clean release

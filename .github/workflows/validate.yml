@@ -30,10 +30,7 @@ jobs:
           python -m pip install -r ci/requirements.txt
 
       - name: Check schema and regressions
-        run: |
-          glib-compile-schemas --strict --dry-run schemas
-          gjs -m tests/detectChanges.js
-          python -m unittest discover -s tests -p 'test_*.py'
+        run: make test
 
       - name: Build package
         run: make pack

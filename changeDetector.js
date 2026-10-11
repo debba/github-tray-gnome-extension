@@ -2,7 +2,7 @@ import GLib from "gi://GLib";
 import Gio from "gi://Gio";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as MessageTray from "resource:///org/gnome/shell/ui/messageTray.js";
-import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
+import { gettext as _, ngettext } from "resource:///org/gnome/shell/extensions/extension.js";
 import { detectChanges, detectNewFollowers } from "./utils.js";
 
 const activeNotifications = new Map();
@@ -41,7 +41,7 @@ export class ChangeDetector {
 
     if (changes.totalNewStars > 0) {
       const starsMsg = changes.starsGained
-        .map((item) => `${item.name} +${item.diff} ⭐`)
+        .map((item) => `${item.name}: +${item.diff} ${ngettext("star", "stars", item.diff)}`)
         .join("\n");
       const starsUrl =
         changes.starsGained.length === 1
@@ -126,17 +126,7 @@ function _destroyNotification(category) {
 
   activeNotifications.delete(category);
 
-  try {
-    entry.notification.destroy();
-  } catch (e) {
-    console.error(e, "GitHubTray:destroyNotification");
-  }
-
-  try {
-    entry.source.destroy();
-  } catch (e) {
-    console.error(e, "GitHubTray:destroyNotificationSource");
-  }
+  entry.source.destroy();
 }
 
 function _destroyAllNotifications() {
@@ -164,6 +154,9 @@ function _createNotification(category, summary, body, url = null) {
     title: "GitHub Tray",
     iconName: "github-symbolic",
   });
+  source.connect("destroy", () => {
+    activeNotifications.delete(category);
+  });
   Main.messageTray.add(source);
 
   const notification = new MessageTray.Notification({
@@ -173,6 +166,10 @@ function _createNotification(category, summary, body, url = null) {
     isTransient: false,
     urgency: MessageTray.Urgency.NORMAL,
   });
+
+  if (category === "stars") {
+    notification.iconName = "starred-symbolic";
+  }
 
   if (url) {
     notification.addAction(_("Open"), () => {
