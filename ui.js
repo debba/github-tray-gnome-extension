@@ -361,10 +361,10 @@ export class GitHubTrayUI {
         const followersBox = new St.BoxLayout({
           style_class: "github-tray-header-badge github-tray-header-followers",
         });
-        const followersIcon = new St.Label({
-          text: "👥",
-          style_class: "github-tray-header-icon",
-        });
+        const followersIcon = this._makeOcticonIcon(
+          "person-symbolic",
+          "github-tray-header-icon",
+        );
         followersBox.add_child(followersIcon);
         const followersLabel = new St.Label({
           text: formatNumber(userInfo.followers),
@@ -377,8 +377,8 @@ export class GitHubTrayUI {
       const reposCountBox = new St.BoxLayout({
         style_class: "github-tray-header-badge github-tray-header-repos",
       });
-      const reposIcon = new St.Label({
-        text: "📦",
+      const reposIcon = new St.Icon({
+        icon_name: "folder-documents-symbolic",
         style_class: "github-tray-header-icon",
       });
       reposCountBox.add_child(reposIcon);
@@ -393,10 +393,10 @@ export class GitHubTrayUI {
         style_class: "github-tray-header-badge github-tray-header-stars",
       });
 
-      const starIcon = new St.Label({
-        text: "⭐",
-        style_class: "github-tray-header-icon",
-      });
+      const starIcon = this._makeOcticonIcon(
+        "star-symbolic",
+        "github-tray-header-icon octicon-stat-star",
+      );
       starsBox.add_child(starIcon);
 
       const totalStarsLabel = new St.Label({
@@ -574,8 +574,8 @@ export class GitHubTrayUI {
       style_class: "github-tray-accordion-header-box",
     });
 
-    const arrowIcon = new St.Label({
-      text: isExpanded ? "▼" : "▶",
+    const arrowIcon = new St.Icon({
+      icon_name: isExpanded ? "pan-down-symbolic" : "pan-end-symbolic",
       style_class: "github-tray-accordion-arrow",
     });
 
@@ -662,7 +662,9 @@ export class GitHubTrayUI {
       this._notificationsExpanded,
       (icon) => {
         this._notificationsExpanded = !this._notificationsExpanded;
-        icon.set_text(this._notificationsExpanded ? "▼" : "▶");
+        icon.icon_name = this._notificationsExpanded
+          ? "pan-down-symbolic"
+          : "pan-end-symbolic";
         if (this._notificationsAccordionScrollView) {
           this._notificationsAccordionScrollView.visible =
             this._notificationsExpanded;
@@ -767,7 +769,8 @@ export class GitHubTrayUI {
 
     // Previous page button
     const prevBtn = new St.Button({
-      label: "←",
+      accessible_name: _("Previous page"),
+      child: new St.Icon({ icon_name: "go-previous-symbolic", icon_size: 12 }),
       style_class: "button github-tray-pager-btn",
       can_focus: true,
       reactive: this._notificationsPage > 0,
@@ -790,7 +793,8 @@ export class GitHubTrayUI {
 
     // Next page button
     const nextBtn = new St.Button({
-      label: "→",
+      accessible_name: _("Next page"),
+      child: new St.Icon({ icon_name: "go-next-symbolic", icon_size: 12 }),
       style_class: "button github-tray-pager-btn",
       can_focus: true,
       reactive: this._notificationsPage < totalPages - 1,
@@ -906,12 +910,12 @@ export class GitHubTrayUI {
     });
 
     // Status icon
-    const statusIcon = this._getWorkflowStatusIcon(run);
-    const statusLabel = new St.Label({
-      text: statusIcon,
-      style_class: "github-tray-workflow-status-icon",
+    const { iconName, styleClass } = this._getWorkflowStatusIcon(run);
+    const statusIcon = new St.Icon({
+      icon_name: iconName,
+      style_class: `github-tray-workflow-status-icon ${styleClass}`,
     });
-    topRow.add_child(statusLabel);
+    topRow.add_child(statusIcon);
 
     // Workflow name button
     const nameBtn = new St.Button({
@@ -1028,24 +1032,27 @@ export class GitHubTrayUI {
   }
 
   _getWorkflowStatusIcon(run) {
-    if (run.status === "in_progress" || run.status === "queued") {
-      return "🟡";
+    if (run.status === "in_progress") {
+      return { iconName: "content-loading-symbolic", styleClass: "workflow-pending" };
+    }
+    if (run.status === "queued") {
+      return { iconName: "alarm-symbolic", styleClass: "workflow-pending" };
     }
     if (run.status === "completed") {
       switch (run.conclusion) {
         case "success":
-          return "🟢";
+          return { iconName: "object-select-symbolic", styleClass: "workflow-success" };
         case "failure":
-          return "🔴";
+          return { iconName: "dialog-error-symbolic", styleClass: "workflow-failure" };
         case "cancelled":
-          return "⚫";
+          return { iconName: "process-stop-symbolic", styleClass: "workflow-inactive" };
         case "skipped":
-          return "⚪";
+          return { iconName: "media-skip-forward-symbolic", styleClass: "workflow-inactive" };
         default:
-          return "🔵";
+          return { iconName: "dialog-information-symbolic", styleClass: "workflow-other" };
       }
     }
-    return "🔵";
+    return { iconName: "dialog-information-symbolic", styleClass: "workflow-other" };
   }
 
   _getWorkflowStatusText(run) {
@@ -1122,7 +1129,9 @@ export class GitHubTrayUI {
       this._reposExpanded,
       (icon) => {
         this._reposExpanded = !this._reposExpanded;
-        icon.set_text(this._reposExpanded ? "▼" : "▶");
+        icon.icon_name = this._reposExpanded
+          ? "pan-down-symbolic"
+          : "pan-end-symbolic";
         if (this._reposAccordionContent) {
           this._reposAccordionContent.visible = this._reposExpanded;
         }
@@ -1146,24 +1155,38 @@ export class GitHubTrayUI {
 
   /**
    * Creates an St.Icon from a bundled Octicon SVG file.
-   * Falls back to a text label if the extension path is not available.
    *
    * @param {string} name - SVG filename without extension (e.g. "issue-opened-symbolic")
    * @param {string} styleClass - CSS class to apply to the icon
-   * @param {string} fallbackText - Emoji/text to use if SVG loading fails
-   * @returns {St.Icon|St.Label}
+   * @returns {St.Icon}
    */
-  _makeOcticonIcon(name, styleClass, fallbackText = "•") {
-    if (!this._extensionPath) {
-      return new St.Label({ text: fallbackText, style_class: styleClass });
-    }
-    try {
-      const path = `${this._extensionPath}/ui/icons/${name}.svg`;
-      const gicon = Gio.Icon.new_for_string(path);
-      return new St.Icon({ gicon, style_class: styleClass });
-    } catch (_e) {
-      return new St.Label({ text: fallbackText, style_class: styleClass });
-    }
+  _makeOcticonIcon(name, styleClass) {
+    const path = `${this._extensionPath}/ui/icons/${name}.svg`;
+    const gicon = Gio.Icon.new_for_string(path);
+    return new St.Icon({ gicon, style_class: styleClass });
+  }
+
+  _makeIconLabel(icon, text) {
+    const box = new St.BoxLayout({
+      y_align: Clutter.ActorAlign.CENTER,
+      style_class: "github-tray-icon-label",
+    });
+    box.add_child(icon);
+    box.add_child(new St.Label({ text, y_align: Clutter.ActorAlign.CENTER }));
+    return box;
+  }
+
+  _createBackButton() {
+    const button = new St.Button({
+      style_class: "button github-tray-back-btn",
+      can_focus: true,
+      child: this._makeIconLabel(
+        new St.Icon({ icon_name: "go-previous-symbolic", icon_size: 12 }),
+        _("Back"),
+      ),
+    });
+    button.connect("clicked", () => this.showReposView());
+    return button;
   }
 
   _createNotificationItem(notification) {
@@ -1294,10 +1317,11 @@ export class GitHubTrayUI {
     titleRow.add_child(titleBtn);
 
     const markReadBtn = new St.Button({
+      accessible_name: _("Mark as read"),
       style_class: "button github-tray-mark-read-btn",
       can_focus: true,
     });
-    const checkIcon = new St.Label({ text: "✓" });
+    const checkIcon = new St.Icon({ icon_name: "object-select-symbolic", icon_size: 12 });
     markReadBtn.set_child(checkIcon);
     markReadBtn.connect("clicked", () => {
       if (this._onMarkNotificationRead) {
@@ -1399,10 +1423,10 @@ export class GitHubTrayUI {
         style: "spacing: 4px;",
         y_align: Clutter.ActorAlign.CENTER,
       });
-      const langDot = new St.Label({
-        text: "●",
+      const langDot = new St.Widget({
         style_class: "github-tray-repo-lang-dot",
-        style: `color: ${langColor};`,
+        style: `background-color: ${langColor};`,
+        y_align: Clutter.ActorAlign.CENTER,
       });
       const langLabel = new St.Label({
         text: repo.language,
@@ -1421,7 +1445,10 @@ export class GitHubTrayUI {
       });
 
       const forkBtn = new St.Button({
-        label: _("🔀 parent"),
+        child: this._makeIconLabel(
+          this._makeOcticonIcon("repo-forked-symbolic", "github-tray-stat-icon"),
+          _("parent"),
+        ),
         style_class: "button github-tray-link-btn-blue",
         can_focus: true,
       });
@@ -1450,7 +1477,6 @@ export class GitHubTrayUI {
     const starsIcon = this._makeOcticonIcon(
       "star-symbolic",
       "github-tray-stat-icon octicon-stat-star",
-      "⭐",
     );
     const starsLabel = new St.Label({
       text: formatNumber(repo.stargazers_count),
@@ -1481,7 +1507,6 @@ export class GitHubTrayUI {
     const forksIcon = this._makeOcticonIcon(
       "repo-forked-symbolic",
       "github-tray-stat-icon octicon-stat-fork",
-      "🍴",
     );
     const forksLabel = new St.Label({
       text: formatNumber(repo.forks_count),
@@ -1624,7 +1649,6 @@ export class GitHubTrayUI {
       const issuesIcon = this._makeOcticonIcon(
         "issue-opened-symbolic",
         "github-tray-issues-icon-compact",
-        "🔴",
       );
       issuesBtnCompact.set_child(issuesIcon);
       issuesBtnCompact.connect("clicked", () => {
@@ -1654,7 +1678,6 @@ export class GitHubTrayUI {
       const pullsIconCompact = this._makeOcticonIcon(
         "pull-request-symbolic",
         "github-tray-pulls-icon-compact",
-        "🔀",
       );
       pullsBtnCompact.set_child(pullsIconCompact);
       pullsBtnCompact.connect("clicked", () => {
@@ -1883,14 +1906,7 @@ export class GitHubTrayUI {
       y_align: Clutter.ActorAlign.CENTER,
     });
 
-    const backBtn = new St.Button({
-      label: _("← Back"),
-      style_class: "button github-tray-back-btn",
-      can_focus: true,
-    });
-    backBtn.connect("clicked", () => {
-      this.showReposView();
-    });
+    const backBtn = this._createBackButton();
     topRow.add_child(backBtn);
 
     const spacer = new St.Widget({ x_expand: true });
@@ -1964,14 +1980,7 @@ export class GitHubTrayUI {
       y_align: Clutter.ActorAlign.CENTER,
     });
 
-    const backBtn = new St.Button({
-      label: _("← Back"),
-      style_class: "button github-tray-back-btn",
-      can_focus: true,
-    });
-    backBtn.connect("clicked", () => {
-      this.showReposView();
-    });
+    const backBtn = this._createBackButton();
     topRow.add_child(backBtn);
 
     const spacer = new St.Widget({ x_expand: true });
@@ -2039,10 +2048,11 @@ export class GitHubTrayUI {
       style_class: "github-tray-issue-top-row",
     });
 
-    const stateIcon = new St.Label({
-      text: issue.state === "open" ? "🟢" : "🟣",
-      style_class: "github-tray-issue-state-icon",
-    });
+    const isOpen = issue.state === "open";
+    const stateIcon = this._makeOcticonIcon(
+      isOpen ? "issue-opened-symbolic" : "issue-closed-symbolic",
+      `github-tray-issue-state-icon ${isOpen ? "octicon-issue-open" : "octicon-issue-closed"}`,
+    );
     topRow.add_child(stateIcon);
 
     const issueNumber = new St.Label({
@@ -2164,14 +2174,7 @@ export class GitHubTrayUI {
       y_align: Clutter.ActorAlign.CENTER,
     });
 
-    const backBtn = new St.Button({
-      label: _("← Back"),
-      style_class: "button github-tray-back-btn",
-      can_focus: true,
-    });
-    backBtn.connect("clicked", () => {
-      this.showReposView();
-    });
+    const backBtn = this._createBackButton();
     topRow.add_child(backBtn);
 
     const spacer = new St.Widget({ x_expand: true });

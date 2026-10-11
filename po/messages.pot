@@ -447,7 +447,7 @@ msgid "Repositories"
 msgstr ""
 
 #: ui.js
-msgid "← Back"
+msgid "Back"
 msgstr ""
 
 #: ui.js
@@ -544,4 +544,21 @@ msgstr[1] ""
 
 #: extension.js:729
 msgid "Waiting for network connection..."
+msgstr ""
+
+msgid "Previous page"
+msgstr ""
+
+msgid "Next page"
+msgstr ""
+
+msgid "Mark as read"
+msgstr ""
+
+msgid "star"
+msgid_plural "stars"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "parent"
 msgstr ""
